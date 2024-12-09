@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,9 +33,11 @@ public class CertificateOfNoCriminalRecord {
     private Integer id;
 
     @Column(name = "date_of_receipt", nullable = false)
+    @Temporal(TemporalType.DATE)
     private Date dateOfReceipt;
 
     @Column(name = "active_until", nullable = false)
+    @Temporal(TemporalType.DATE)
     private Date activeUntil;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
