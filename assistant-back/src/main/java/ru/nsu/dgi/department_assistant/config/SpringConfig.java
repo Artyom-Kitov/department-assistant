@@ -57,16 +57,6 @@ public class SpringConfig {
         return properties;
     }
 
-//    @Bean
-//    public LocalSessionFactoryBean sessionFactory() {
-//        LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
-//        sessionFactory.setDataSource(dataSource());
-//        sessionFactory.setPackagesToScan("ru.nsu.dgi.department_assistant.domain");
-//        sessionFactory.setHibernateProperties(hibernateProperties());
-//
-//        return sessionFactory;
-//    }
-
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         final LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
@@ -78,14 +68,6 @@ public class SpringConfig {
 
         return em;
     }
-
-//    @Bean
-//    public PlatformTransactionManager hibernateTransactionManager() {
-//        HibernateTransactionManager transactionManager = new HibernateTransactionManager();
-//        transactionManager.setSessionFactory(sessionFactory().getObject());
-//
-//        return transactionManager;
-//    }
 
     @Bean
     public PlatformTransactionManager transactionManager() {

@@ -20,7 +20,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Entity
-@Table(name = "employment_status")
+@Table(name = "employment_status", schema = "public")
 public class EmploymentStatus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

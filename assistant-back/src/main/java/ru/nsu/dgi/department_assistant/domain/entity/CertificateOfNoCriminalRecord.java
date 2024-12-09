@@ -23,7 +23,7 @@ import java.util.Date;
 @Setter
 @Getter
 @Entity
-@Table(name = "certificate_of_no_criminal_record")
+@Table(name = "certificate_of_no_criminal_record", schema = "public")
 public class CertificateOfNoCriminalRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

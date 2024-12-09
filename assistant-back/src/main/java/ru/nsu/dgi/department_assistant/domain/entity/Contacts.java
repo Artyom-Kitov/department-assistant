@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "contacts")
+@Table(name = "contacts", schema = "public")
 @Setter
 @Getter
 @AllArgsConstructor
@@ -35,9 +35,9 @@ public class Contacts {
     @Column(name = "additional_info", columnDefinition = "TEXT")
     private String additionalInfo;
 
-    @OneToOne(mappedBy = "contacts", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private Employee employee;
 
-    @OneToOne(mappedBy = "contacts", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private OrganizationalUnit organizationalUnit;
 }

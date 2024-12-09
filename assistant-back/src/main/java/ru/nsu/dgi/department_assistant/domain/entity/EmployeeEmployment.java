@@ -13,8 +13,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Entity
-@Table(name = "employee_employment")
+@Table(name = "employee_employment", schema = "public")
 @Setter
 @Getter
 @NoArgsConstructor
@@ -22,17 +24,26 @@ import lombok.Setter;
 @IdClass(EmployeeEmploymentId.class)
 public class EmployeeEmployment {
     @Id
-    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id", referencedColumnName = "id", nullable = false)
+    private UUID employeeId;
+
+    @Id
+    @JoinColumn(name = "post_id", referencedColumnName = "id", nullable = false)
+    private Integer postId;
+
+    @Id
+    @JoinColumn(name = "employment_type_id", referencedColumnName = "id", nullable = false)
+    private Integer employmentTypeId;
+
+    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 
-    @Id
     @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-    @JoinColumn(name = "post_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "post_id", referencedColumnName = "id")
     private Post post;
 
-    @Id
     @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-    @JoinColumn(name = "employment_type_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "employment_type_id", referencedColumnName = "id")
     private EmploymentType employmentType;
 }

@@ -22,7 +22,7 @@ import java.util.Date;
 @Setter
 @Getter
 @Entity
-@Table(name = "employment_record")
+@Table(name = "employment_record", schema = "public")
 public class EmploymentRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

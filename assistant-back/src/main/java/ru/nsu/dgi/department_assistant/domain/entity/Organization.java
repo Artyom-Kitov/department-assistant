@@ -17,7 +17,7 @@ import lombok.Setter;
 import java.util.List;
 
 @Entity
-@Table(name = "organization")
+@Table(name = "organization", schema = "public")
 @Getter
 @Setter
 @AllArgsConstructor

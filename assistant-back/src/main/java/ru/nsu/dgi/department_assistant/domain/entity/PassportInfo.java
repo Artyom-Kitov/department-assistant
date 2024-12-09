@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "passport_info")
+@Table(name = "passport_info", schema = "public")
 @Getter
 @Setter
 @NoArgsConstructor

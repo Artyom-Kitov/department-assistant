@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class EmployeeEmploymentId implements Serializable {
-    private UUID employee;
-    private Integer post;
-    private Integer employmentType;
+    private UUID employeeId;
+    private Integer postId;
+    private Integer employmentTypeId;
 }
