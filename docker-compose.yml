@@ -1,0 +1,12 @@
+version: '3'
+services:
+  nsu_department_database:
+    image: postgres:13
+    container_name: nsu_department_database
+    environment:
+      - POSTGRES_DB=department-db
+      - POSTGRES_USER=assistant-back
+      - POSTGRES_PASSWORD=ZnVjayB5ZWFoIQ==
+    ports:
+      - "5432:5432"
+    restart: always

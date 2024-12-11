@@ -1,6 +1,7 @@
 package ru.nsu.dgi.department_assistant.domain.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -24,15 +25,15 @@ import java.util.UUID;
 @IdClass(EmployeeEmploymentId.class)
 public class EmployeeEmployment {
     @Id
-    @JoinColumn(name = "employee_id", referencedColumnName = "id", nullable = false)
+    @Column(name = "employee_id", nullable = false)
     private UUID employeeId;
 
     @Id
-    @JoinColumn(name = "post_id", referencedColumnName = "id", nullable = false)
+    @Column(name = "post_id", nullable = false)
     private Integer postId;
 
     @Id
-    @JoinColumn(name = "employment_type_id", referencedColumnName = "id", nullable = false)
+    @Column(name = "employment_type_id", nullable = false)
     private Integer employmentTypeId;
 
     @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
