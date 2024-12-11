@@ -1,13 +1,13 @@
-package ru.nsu.dgi.department_assistant.service.impl;
+package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeRequestDTO;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDTO;
+import ru.nsu.dgi.department_assistant.domain.dto.EmployeeRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.Employee;
 import ru.nsu.dgi.department_assistant.domain.mapper.EmployeeMapper;
-import ru.nsu.dgi.department_assistant.repository.EmployeeRepository;
-import ru.nsu.dgi.department_assistant.service.EmployeeService;
+import ru.nsu.dgi.department_assistant.domain.repository.EmployeeRepository;
+import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,23 +19,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeMapper employeeMapper;
 
     @Override
-    public List<EmployeeResponseDTO> getAllEmployees() {
+    public List<EmployeeResponseDto> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
 
         return employees.stream()
-                .map(employeeMapper::entityToResponseDTO)
+                .map(employeeMapper::entityToResponseDto)
                 .toList();
     }
 
     @Override
-    public EmployeeResponseDTO getEmployee(UUID id) {
+    public EmployeeResponseDto getEmployee(UUID id) {
         Employee employee = employeeRepository.findById(id).orElse(null);
-        return employeeMapper.entityToResponseDTO(employee);
+        return employeeMapper.entityToResponseDto(employee);
     }
 
     @Override
-    public void addEmployee(EmployeeRequestDTO employeeRequestDTO) {
-        Employee employee = employeeMapper.requestToEntity(employeeRequestDTO);
+    public void addEmployee(EmployeeRequestDto employeeRequestDto) {
+        Employee employee = employeeMapper.requestToEntity(employeeRequestDto);
         employeeRepository.save(employee);
     }
 }

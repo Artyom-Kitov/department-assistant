@@ -1,6 +1,6 @@
 package ru.nsu.dgi.department_assistant.domain.dto;
 
-public record EmployeeResponseDTO (
+public record EmployeeResponseDto(
     String id,
     String firstName,
     String lastName,
