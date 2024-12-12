@@ -4,5 +4,6 @@ public record ContactsResponseDto(
         Long id,
         String phoneNumber,
         String email,
+        String nsuEmail,
         String additionalInfo
 ) {}
