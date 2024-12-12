@@ -30,7 +30,7 @@ public class WorkExperience {
     @Column(name = "days", nullable = false)
     private Integer days;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 }

@@ -31,6 +31,6 @@ public class EmploymentType {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "employmentType", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "employmentType", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<EmployeeEmployment> employments;
 }

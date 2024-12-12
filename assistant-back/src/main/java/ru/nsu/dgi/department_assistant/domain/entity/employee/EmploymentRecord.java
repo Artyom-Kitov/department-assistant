@@ -29,10 +29,10 @@ public class EmploymentRecord {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "date_of_receipt")
+    @Column(name = "date_of_receipt", nullable = false)
     private LocalDate dateOfReceipt;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 }
