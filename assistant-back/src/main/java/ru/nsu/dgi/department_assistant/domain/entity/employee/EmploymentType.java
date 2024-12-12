@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.entity;
+package ru.nsu.dgi.department_assistant.domain.entity.employee;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,12 +17,12 @@ import lombok.Setter;
 import java.util.List;
 
 @Entity
-@Table(name = "post", schema = "public")
+@Table(name = "employment_type", schema = "public")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Post {
+public class EmploymentType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -31,6 +31,6 @@ public class Post {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "employmentType", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<EmployeeEmployment> employments;
 }

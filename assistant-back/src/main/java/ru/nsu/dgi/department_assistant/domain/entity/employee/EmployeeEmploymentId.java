@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.entity;
+package ru.nsu.dgi.department_assistant.domain.entity.employee;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.entity;
+package ru.nsu.dgi.department_assistant.domain.entity.employee;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -7,30 +7,32 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
+import java.time.LocalDate;
 
-@Entity
-@Table(name = "employment_type", schema = "public")
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmploymentType {
+@Setter
+@Getter
+@Entity
+@Table(name = "employment_record", schema = "public")
+public class EmploymentRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "date_of_receipt")
+    private LocalDate dateOfReceipt;
 
-    @OneToMany(mappedBy = "employmentType", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    private List<EmployeeEmployment> employments;
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "employee_id", referencedColumnName = "id")
+    private Employee employee;
 }

@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.entity;
+package ru.nsu.dgi.department_assistant.domain.entity.employee;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -15,20 +15,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Setter
-@Getter
 @Entity
-@Table(name = "work_experience", schema = "public")
-public class WorkExperience {
+@Table(name = "passport_info", schema = "public")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PassportInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "days", nullable = false)
-    private Integer days;
+    @Column(name = "passport_info")
+    private String passportInfo;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "employee_id", referencedColumnName = "id")

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.dto.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.entity.Employee;
+import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.mapper.EmployeeMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.EmployeeRepository;
 import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
