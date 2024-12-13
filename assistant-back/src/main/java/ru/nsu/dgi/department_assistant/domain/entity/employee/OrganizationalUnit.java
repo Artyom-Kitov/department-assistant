@@ -31,11 +31,11 @@ public class OrganizationalUnit {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "contacts_id", referencedColumnName = "id")
     private Contacts contacts;
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     private Organization organization;
 }

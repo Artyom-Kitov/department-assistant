@@ -38,9 +38,9 @@ public class CertificateOfNoCriminalRecord {
 
     @Column(name = "active_until", nullable = false)
     @Temporal(TemporalType.DATE)
-    private LocalDate activeUntil;
+    private LocalDate expirationDate;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 }

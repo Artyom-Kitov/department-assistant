@@ -31,6 +31,6 @@ public class Post {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<EmployeeEmployment> employments;
 }

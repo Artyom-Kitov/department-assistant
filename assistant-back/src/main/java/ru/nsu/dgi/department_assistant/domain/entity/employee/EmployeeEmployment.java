@@ -36,15 +36,15 @@ public class EmployeeEmployment {
     @Column(name = "employment_type_id", nullable = false)
     private Integer employmentTypeId;
 
-    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 
-    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "post_id", referencedColumnName = "id")
     private Post post;
 
-    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "employment_type_id", referencedColumnName = "id")
     private EmploymentType employmentType;
 }

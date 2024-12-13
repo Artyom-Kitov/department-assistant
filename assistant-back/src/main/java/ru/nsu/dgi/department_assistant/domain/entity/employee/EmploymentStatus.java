@@ -33,7 +33,7 @@ public class EmploymentStatus {
     @Column(name = "employment_info", columnDefinition = "TEXT")
     private String employmentInfo;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 }

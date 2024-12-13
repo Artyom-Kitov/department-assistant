@@ -30,7 +30,7 @@ public class PassportInfo {
     @Column(name = "passport_info")
     private String passportInfo;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "employee_id", referencedColumnName = "id")
     private Employee employee;
 }

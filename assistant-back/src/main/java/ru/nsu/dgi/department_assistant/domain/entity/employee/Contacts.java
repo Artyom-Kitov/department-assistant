@@ -35,9 +35,9 @@ public class Contacts {
     @Column(name = "additional_info", columnDefinition = "TEXT")
     private String additionalInfo;
 
-    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Employee employee;
 
-    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "contacts", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private OrganizationalUnit organizationalUnit;
 }
