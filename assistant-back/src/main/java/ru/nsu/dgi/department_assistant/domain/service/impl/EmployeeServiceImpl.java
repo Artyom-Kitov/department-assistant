@@ -2,11 +2,9 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.nsu.dgi.department_assistant.domain.dto.AcademicDegreeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.ContactsResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeWithAllInfoResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.mapper.AcademicDegreeMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.CertificateOfNoCriminalRecordMapper;
@@ -14,14 +12,11 @@ import ru.nsu.dgi.department_assistant.domain.mapper.ContactsMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.EmployeeMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.EmploymentRecordMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.EmploymentStatusMapper;
-import ru.nsu.dgi.department_assistant.domain.mapper.EmploymentTypeMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.PassportInfoMapper;
-import ru.nsu.dgi.department_assistant.domain.mapper.PostMapper;
 import ru.nsu.dgi.department_assistant.domain.mapper.WorkExperienceMapper;
-import ru.nsu.dgi.department_assistant.domain.repository.EmployeeRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.employee.EmployeeRepository;
 import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 

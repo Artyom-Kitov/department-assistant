@@ -1,8 +1,8 @@
 package ru.nsu.dgi.department_assistant.domain.service;
 
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeWithAllInfoResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 
 import java.util.List;
 import java.util.UUID;

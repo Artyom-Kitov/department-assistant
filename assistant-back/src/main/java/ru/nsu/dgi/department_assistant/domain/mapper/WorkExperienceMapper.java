@@ -1,7 +1,7 @@
 package ru.nsu.dgi.department_assistant.domain.mapper;
 
 import org.mapstruct.Mapper;
-import ru.nsu.dgi.department_assistant.domain.dto.WorkExperienceResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.WorkExperienceResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.WorkExperience;
 
 @Mapper(componentModel = "spring")

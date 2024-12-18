@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.EmployeeWithAllInfoResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
 
 import java.util.List;
