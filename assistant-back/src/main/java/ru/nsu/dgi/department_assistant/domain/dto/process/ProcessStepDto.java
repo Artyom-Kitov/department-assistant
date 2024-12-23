@@ -4,12 +4,14 @@ import lombok.Builder;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ConditionalStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.FinalData;
+import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ProcessTransitionStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.StepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.CommonStepNode;
 import ru.nsu.dgi.department_assistant.domain.graph.ConditionalStepNode;
 import ru.nsu.dgi.department_assistant.domain.graph.FinalNode;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessTransitionNode;
 import ru.nsu.dgi.department_assistant.domain.graph.SubtasksStepNode;
 
 import java.util.UUID;
@@ -54,6 +56,14 @@ public record ProcessStepDto(
                     .duration(duration)
                     .metaInfo(metaInfo)
                     .subtasks(d.getSubtasks())
+                    .build();
+            case ProcessTransitionStepData d -> ProcessTransitionNode.builder()
+                    .id(id)
+                    .type(type)
+                    .description(description)
+                    .duration(duration)
+                    .metaInfo(metaInfo)
+                    .nextProcess(d.getNextProcess())
                     .build();
         };
     }

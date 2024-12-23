@@ -7,6 +7,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessStepDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ConditionalStepData;
+import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.StepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 import ru.nsu.dgi.department_assistant.domain.exception.ProcessLoopException;
@@ -14,6 +15,7 @@ import ru.nsu.dgi.department_assistant.domain.graph.CommonStepNode;
 import ru.nsu.dgi.department_assistant.domain.graph.ConditionalStepNode;
 import ru.nsu.dgi.department_assistant.domain.graph.FinalNode;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessTransitionNode;
 import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
 import ru.nsu.dgi.department_assistant.domain.graph.SubtasksStepNode;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
@@ -65,22 +67,31 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
         nodes.forEach((id, node) -> {
             switch (node) {
                 case CommonStepNode n -> {
-                    UUID nextId = ((CommonStepData) steps.get(id).data()).getNext();
+                    UUID nextId = ((CommonStepData) getNextStepData(steps, id)).getNext();
                     n.setNext(nodes.get(nextId));
                 }
                 case ConditionalStepNode n -> {
-                    UUID ifTrueId = ((ConditionalStepData) steps.get(id).data()).getIfTrue();
-                    UUID ifFalseId = ((ConditionalStepData) steps.get(id).data()).getIfFalse();
+                    UUID ifTrueId = ((ConditionalStepData) getNextStepData(steps, id)).getIfTrue();
+                    UUID ifFalseId = ((ConditionalStepData) getNextStepData(steps, id)).getIfFalse();
                     n.setIfTrue(nodes.get(ifTrueId));
                     n.setIfFalse(nodes.get(ifFalseId));
                 }
                 case FinalNode ignored -> {}
+                case ProcessTransitionNode ignored -> {}
                 case SubtasksStepNode n -> {
-                    UUID nextId = ((SubtasksStepData) steps.get(id).data()).getNext();
+                    UUID nextId = ((SubtasksStepData) getNextStepData(steps, id)).getNext();
                     n.setNext(nodes.get(nextId));
                 }
             }
         });
+    }
+
+    private StepData getNextStepData(Map<UUID, ProcessStepDto> steps, UUID id) {
+        ProcessStepDto step = steps.get(id);
+        if (step == null) {
+            throw new InvalidProcessTemplateException("no step with id " + id);
+        }
+        return step.data();
     }
 
     private void validateNoLoops(ProcessGraphNode node) {
@@ -111,6 +122,7 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
                     nodes.add(n.getIfFalse());
                 }
                 case FinalNode ignored -> {}
+                case ProcessTransitionNode ignored -> {}
             }
         }
     }
@@ -128,11 +140,13 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
                     .max()
                     .orElseThrow() + calculateDuration(n.getNext());
             case FinalNode ignored -> 0;
+            case ProcessTransitionNode ignored -> 0;
         };
     }
 
     @Transactional
     @Override
     public void saveToDatabase(ProcessGraphNode node) {
+
     }
 }

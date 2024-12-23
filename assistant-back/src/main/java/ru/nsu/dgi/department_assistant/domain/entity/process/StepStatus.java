@@ -16,6 +16,7 @@ import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -34,8 +35,11 @@ public class StepStatus {
     @Column(name = "step_id", nullable = false)
     private UUID stepId;
 
-    @Column(name = "is_completed", nullable = false)
-    private boolean isCompleted;
+    @Column(name = "completed_at")
+    private LocalDate completedAt;
+
+    @Column(name = "deadline")
+    private LocalDate deadline;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "employee_id", referencedColumnName = "id")

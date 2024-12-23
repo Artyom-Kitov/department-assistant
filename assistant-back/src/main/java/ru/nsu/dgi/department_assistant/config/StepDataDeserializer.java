@@ -9,6 +9,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessStepDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ConditionalStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.FinalData;
+import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ProcessTransitionStepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.StepData;
 import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
@@ -38,6 +39,7 @@ public class StepDataDeserializer extends JsonDeserializer<List<ProcessStepDto>>
                 case 2 -> mapper.treeToValue(dataNode, SubtasksStepData.class);
                 case 3 -> mapper.treeToValue(dataNode, ConditionalStepData.class);
                 case 4 -> mapper.treeToValue(dataNode, FinalData.class);
+                case 5 -> mapper.treeToValue(dataNode, ProcessTransitionStepData.class);
                 default -> throw new InvalidProcessTemplateException("no step type with id = " + type);
             };
             steps.add(ProcessStepDto.builder()

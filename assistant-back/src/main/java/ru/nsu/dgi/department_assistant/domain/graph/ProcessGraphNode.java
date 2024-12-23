@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @SuperBuilder
-public abstract sealed class ProcessGraphNode permits CommonStepNode, ConditionalStepNode, FinalNode, SubtasksStepNode {
+public abstract sealed class ProcessGraphNode permits CommonStepNode, ConditionalStepNode, FinalNode, ProcessTransitionNode, SubtasksStepNode {
     protected UUID id;
     protected int type;
     protected int duration;
