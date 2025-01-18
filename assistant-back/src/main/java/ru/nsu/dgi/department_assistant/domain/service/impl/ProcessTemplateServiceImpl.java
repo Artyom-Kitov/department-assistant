@@ -9,6 +9,8 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class ProcessTemplateServiceImpl implements ProcessTemplateService {
@@ -19,8 +21,7 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
     @Override
     public ProcessTemplateCreationResponseDto createProcessTemplate(ProcessTemplateCreationRequestDto request) {
         ProcessGraphNode root = processGraphService.buildFromRequest(request);
-        return new ProcessTemplateCreationResponseDto(
-                processSavingService.saveTemplateToDb(request.name(), root.getDuration(), root)
-        );
+        UUID processId = processSavingService.saveTemplateToDb(request.name(), root.getDuration(), root);
+        return new ProcessTemplateCreationResponseDto(processId);
     }
 }

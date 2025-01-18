@@ -104,19 +104,19 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
             switch (current) {
                 case CommonStepNode n -> {
                     if (visited.contains(n.getNext().getId())) {
-                        throw new ProcessLoopException();
+                        throw new ProcessLoopException("process contains loops");
                     }
                     nodes.add(n.getNext());
                 }
                 case SubtasksStepNode n -> {
                     if (visited.contains(n.getNext().getId())) {
-                        throw new ProcessLoopException();
+                        throw new ProcessLoopException("process contains loops");
                     }
                     nodes.add(n.getNext());
                 }
                 case ConditionalStepNode n -> {
                     if (visited.contains(n.getIfTrue().getId()) || visited.contains(n.getIfFalse().getId())) {
-                        throw new ProcessLoopException();
+                        throw new ProcessLoopException("process contains loops");
                     }
                     nodes.add(n.getIfTrue());
                     nodes.add(n.getIfFalse());
