@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/templates")
@@ -26,25 +31,22 @@ public class ProcessTemplateController {
     @Operation(
             summary = "Create new process template",
             description = """
-                    Note that the following conditions must be satisfied.
-                    1) The process must contain at least one final step where isSuccessful == true.
-                    2) There shouldn't be any loops.
-                    3) Only one step should be the starting one. This is the step which no other step leads to.
+                    Note that the process must contain at least one final step where isSuccessful == true.
                     
-                    Steps, as you can see below, are specified in the "steps" list.
-                    The main idea is that the data field depends on the type value.
-                    The following step types are supported.
+                    The process itself is represented as a tree, starting from the root vertex.
+                    The "data" field depends on the "type" value.
+                    
+                    Supported steps:
                     
                     **Basic step**
                     ```
                     {
-                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                         "duration": 1,
                         "metaInfo": {},
                         "type": 1,
                         "description": "Отнести в деканат документ",
                         "data": {
-                            "next": "723840cb-2be7-4f10-ad0c-368854aa537b"
+                            "next": { ... }
                         }
                     }
                     ```
@@ -52,7 +54,6 @@ public class ProcessTemplateController {
                     **Subtasks step**
                     ```
                     {
-                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                         "duration": 1,
                         "metaInfo": {},
                         "type": 2,
@@ -71,7 +72,7 @@ public class ProcessTemplateController {
                                     "Оригинал диплома"
                                 }
                             ],
-                            "next": "723840cb-2be7-4f10-ad0c-368854aa537b"
+                            "next": { ... }
                         }
                     }
                     ```
@@ -80,14 +81,13 @@ public class ProcessTemplateController {
                     
                     ```
                     {
-                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                         "duration": 8,
                         "metaInfo": {},
                         "type": 3,
                         "description": "Претендент имеет высшее образование?",
                         "data": {
-                            "ifTrue": "723840cb-2be7-4f10-ad0c-368854aa537b",
-                            "ifFalse": "723840cb-2be7-4f10-ad0c-368854aa537b"
+                            "ifTrue": { ... },
+                            "ifFalse": { ... }
                         }
                     }
                     ```
@@ -96,7 +96,6 @@ public class ProcessTemplateController {
                     
                     ```
                     {
-                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                         "metaInfo": {},
                         "type": 4,
                         "description": "Претендент успешно трудоустроен",
@@ -110,7 +109,6 @@ public class ProcessTemplateController {
                     
                     ```
                     {
-                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                         "metaInfo": {},
                         "type": 5,
                         "description": "Трудоустройство по ДГПХ",
@@ -143,5 +141,10 @@ public class ProcessTemplateController {
     public ResponseEntity<ProcessTemplateCreationResponseDto> createTemplate(
             @RequestBody ProcessTemplateCreationRequestDto request) {
         return ResponseEntity.ok(processTemplateService.createProcessTemplate(request));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProcessTemplateResponseDto> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(processTemplateService.getProcessById(id));
     }
 }

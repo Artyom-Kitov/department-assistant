@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
@@ -20,8 +22,20 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
 
     @Override
     public ProcessTemplateCreationResponseDto createProcessTemplate(ProcessTemplateCreationRequestDto request) {
-        ProcessGraphNode root = processGraphService.buildFromRequest(request);
-        UUID processId = processSavingService.saveTemplateToDb(request.name(), root.getDuration(), root);
+        ProcessGraphNode root = request.body();
+        int duration = processGraphService.calculateDuration(root);
+        UUID processId = processSavingService.saveTemplate(request.name(), duration, root);
         return new ProcessTemplateCreationResponseDto(processId);
+    }
+
+    @Override
+    public ProcessTemplateResponseDto getProcessById(UUID id) {
+        ProcessGraph graph = processSavingService.loadTemplate(id);
+        return new ProcessTemplateResponseDto(
+                graph.id(),
+                graph.name(),
+                graph.duration(),
+                graph.body()
+        );
     }
 }

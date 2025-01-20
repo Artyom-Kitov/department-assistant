@@ -2,27 +2,21 @@ package ru.nsu.dgi.department_assistant.config;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.CommonStepData;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ConditionalStepData;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.FinalData;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.ProcessTransitionStepData;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.StepData;
-import ru.nsu.dgi.department_assistant.domain.dto.process.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 
 import java.util.Arrays;
 
-@RequiredArgsConstructor
 @Getter
+@RequiredArgsConstructor
 public enum StepType {
-    COMMON(1, CommonStepData.class),
-    SUBTASKS(2, SubtasksStepData.class),
-    CONDITIONAL(3, ConditionalStepData.class),
-    FINAL(4, FinalData.class),
-    TRANSITION(5, ProcessTransitionStepData.class);
+
+    COMMON(1),
+    SUBTASKS(2),
+    CONDITIONAL(3),
+    FINAL(4),
+    TRANSITION(5);
 
     private final int value;
-    private final Class<? extends StepData> targetType;
 
     public static StepType of(int type) {
         return Arrays.stream(StepType.values())

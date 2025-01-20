@@ -1,20 +1,21 @@
-package ru.nsu.dgi.department_assistant.domain.dto.process.stepdata;
+package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
 
 import java.util.List;
-import java.util.UUID;
 
-@RequiredArgsConstructor
 @Getter
+@RequiredArgsConstructor
 public final class SubtasksStepData extends StepData {
+
     private final List<Subtask> subtasks;
-    private final UUID next;
+    private final ProcessGraphNode next;
 
     @Override
-    public List<UUID> next() {
+    public List<ProcessGraphNode> next() {
         return List.of(next);
     }
 }

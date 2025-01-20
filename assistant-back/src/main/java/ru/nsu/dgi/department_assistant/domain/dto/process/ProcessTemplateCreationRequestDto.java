@@ -1,14 +1,13 @@
 package ru.nsu.dgi.department_assistant.domain.dto.process;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import ru.nsu.dgi.department_assistant.config.StepDataDeserializer;
-
-import java.util.List;
+import ru.nsu.dgi.department_assistant.config.ProcessGraphDeserializer;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 
 public record ProcessTemplateCreationRequestDto(
         String name,
 
-        @JsonDeserialize(using = StepDataDeserializer.class)
-        List<ProcessStepDto> steps
+        @JsonDeserialize(using = ProcessGraphDeserializer.class)
+        ProcessGraphNode body
 ) {
 }

@@ -1,20 +1,20 @@
-package ru.nsu.dgi.department_assistant.domain.dto.process.stepdata;
+package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 
 import java.util.List;
-import java.util.UUID;
 
-@RequiredArgsConstructor
 @Getter
+@RequiredArgsConstructor
 public final class FinalData extends StepData {
-    @JsonProperty("isSuccessful")
+
     private final boolean isSuccessful;
 
     @Override
-    public List<UUID> next() {
+    public List<ProcessGraphNode> next() {
         return List.of();
     }
 }
