@@ -7,6 +7,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreatio
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
+import ru.nsu.dgi.department_assistant.domain.mapper.process.ProcessGraphMapper;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
@@ -20,6 +21,8 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
     private final ProcessGraphService processGraphService;
     private final ProcessSavingService processSavingService;
 
+    private final ProcessGraphMapper processGraphMapper;
+
     @Override
     public ProcessTemplateCreationResponseDto createProcessTemplate(ProcessTemplateCreationRequestDto request) {
         ProcessGraphNode root = request.body();
@@ -31,11 +34,6 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
     @Override
     public ProcessTemplateResponseDto getProcessById(UUID id) {
         ProcessGraph graph = processSavingService.loadTemplate(id);
-        return new ProcessTemplateResponseDto(
-                graph.id(),
-                graph.name(),
-                graph.duration(),
-                graph.body()
-        );
+        return processGraphMapper.toResponse(graph);
     }
 }

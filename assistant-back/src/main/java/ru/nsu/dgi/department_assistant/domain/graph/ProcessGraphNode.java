@@ -2,6 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.graph;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
 
 import java.util.List;
@@ -16,7 +17,8 @@ public class ProcessGraphNode {
     private final String metaInfo;
     private final String description;
 
-    private final StepData data;
+    @Setter
+    private StepData data;
 
     public List<ProcessGraphNode> next() {
         return data.next();

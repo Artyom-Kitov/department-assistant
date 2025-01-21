@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.mapper;
+package ru.nsu.dgi.department_assistant.domain.mapper.employee;
 
 import org.mapstruct.Mapper;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.PassportInfoResponseDto;

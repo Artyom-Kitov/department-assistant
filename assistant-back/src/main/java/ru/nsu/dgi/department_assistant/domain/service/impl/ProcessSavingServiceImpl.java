@@ -3,6 +3,7 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.nsu.dgi.department_assistant.config.StepType;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ConditionalTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.FinalType;
@@ -14,10 +15,12 @@ import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateEx
 import ru.nsu.dgi.department_assistant.domain.exception.ProcessNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
+import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.ConditionalStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.FinalData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.ProcessTransitionStepData;
+import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.repository.process.CommonTransitionRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ConditionalTransitionRepository;
@@ -28,7 +31,11 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -117,7 +124,75 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
     public ProcessGraph loadTemplate(UUID id) {
         Process process = processRepository.findById(id)
                 .orElseThrow(() -> new ProcessNotFoundException(id));
-        // TODO: load process from DB
-        return null;
+
+        List<Step> steps = stepRepository.findAllByProcess(process);
+        Map<UUID, ProcessGraphNode> nodesMap = steps.stream()
+                .map(step -> ProcessGraphNode.builder()
+                        .id(step.getId())
+                        .type(step.getType())
+                        .duration(step.getDuration())
+                        .metaInfo(step.getMetaInfo())
+                        .description(step.getDescription())
+                        .build())
+                .collect(Collectors.toMap(ProcessGraphNode::getId, node -> node));
+
+        resolveGraph(steps, nodesMap);
+
+        return ProcessGraph.builder()
+                .id(process.getId())
+                .name(process.getName())
+                .duration(process.getTotalDuration())
+                .body(getRoot(steps, nodesMap))
+                .build();
+    }
+
+    private ProcessGraphNode getRoot(List<Step> steps, Map<UUID, ProcessGraphNode> nodesMap) {
+        Set<UUID> ids = steps.stream().map(Step::getId).collect(Collectors.toSet());
+        for (ProcessGraphNode node : nodesMap.values()) {
+            node.next().forEach(n -> ids.remove(n.getId()));
+        }
+        return nodesMap.get(ids.stream().findAny().orElseThrow());
+    }
+
+    private void resolveGraph(List<Step> steps, Map<UUID, ProcessGraphNode> nodesMap) {
+        for (Step step : steps) {
+            ProcessGraphNode node = nodesMap.get(step.getId());
+            resolveNodeData(step, node, nodesMap);
+        }
+    }
+
+    private void resolveNodeData(Step step, ProcessGraphNode node, Map<UUID, ProcessGraphNode> nodesMap) {
+        StepType type = StepType.of(node.getType());
+        StepData data = switch (type) {
+            case COMMON -> {
+                CommonTransition transition = commonTransitionRepository.findById(node.getId()).orElseThrow();
+                ProcessGraphNode next = nodesMap.get(transition.getNextStep().getId());
+                yield new CommonStepData(next);
+            }
+            case SUBTASKS -> {
+                List<Substep> substeps = substepRepository.findAllByStep(step);
+                List<Subtask> subtasks = substeps.stream()
+                        .map(substep -> new Subtask(substep.getId(), substep.getDescription(), substep.getDuration()))
+                        .toList();
+                CommonTransition transition = commonTransitionRepository.findById(node.getId()).orElseThrow();
+                ProcessGraphNode next = nodesMap.get(transition.getNextStep().getId());
+                yield new SubtasksStepData(subtasks, next);
+            }
+            case CONDITIONAL -> {
+                ConditionalTransition transition = conditionalTransitionRepository.findById(node.getId()).orElseThrow();
+                ProcessGraphNode ifTrue = nodesMap.get(transition.getPositiveStep().getId());
+                ProcessGraphNode ifFalse = nodesMap.get(transition.getNegativeStep().getId());
+                yield new ConditionalStepData(ifTrue, ifFalse);
+            }
+            case FINAL -> {
+                FinalType finalType = finalTypeRepository.findById(node.getId()).orElseThrow();
+                yield new FinalData(finalType.isSuccessful());
+            }
+            case TRANSITION -> {
+                ProcessTransition transition = processTransitionRepository.findById(node.getId()).orElseThrow();
+                yield new ProcessTransitionStepData(transition.getProcess().getId());
+            }
+        };
+        node.setData(data);
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.nsu.dgi.department_assistant.domain.dto.EntityNotFoundDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
@@ -143,6 +144,32 @@ public class ProcessTemplateController {
         return ResponseEntity.ok(processTemplateService.createProcessTemplate(request));
     }
 
+    @Operation(
+            summary = "Get process body by ID",
+            description = """
+                    The process is represented as described in the creation method.
+                    
+                    See [here](#/process-template-controller/createTemplate) for the description.
+                    """
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved",
+                            content = {
+                                    @Content(schema = @Schema(implementation = ProcessTemplateResponseDto.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "No process with given ID",
+                            content = {
+                                    @Content(schema = @Schema(implementation = EntityNotFoundDto.class))
+                            }
+                    )
+            }
+    )
     @GetMapping("/{id}")
     public ResponseEntity<ProcessTemplateResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(processTemplateService.getProcessById(id));
