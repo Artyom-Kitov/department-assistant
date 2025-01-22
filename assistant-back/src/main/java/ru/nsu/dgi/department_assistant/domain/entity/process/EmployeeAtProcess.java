@@ -16,6 +16,7 @@ import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.EmployeeAtProcessId;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +36,9 @@ public class EmployeeAtProcess {
     private UUID processId;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id")
+    @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Employee employee;
+
+    @Column(name = "started_at", nullable = false)
+    private LocalDate date;
 }

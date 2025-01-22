@@ -16,14 +16,14 @@ CREATE TABLE IF NOT EXISTS process (
 -- TABLE step
 --==========================--
 CREATE TABLE IF NOT EXISTS step (
-    id          UUID    NOT NULL,
     process_id  UUID    NOT NULL,
+    id          INT     NOT NULL,
     duration    INT     NOT NULL DEFAULT 1,
     meta_info   JSON,
     type        INT     NOT NULL,
     description TEXT    NOT NULL,
 
-    PRIMARY KEY (id),
+    PRIMARY KEY (id, process_id),
 
     FOREIGN KEY (process_id)
         REFERENCES process (id)
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS step (
 CREATE TABLE IF NOT EXISTS employee_at_process (
     employee_id UUID    NOT NULL,
     process_id  UUID    NOT NULL,
+    started_at  DATE    NOT NULL,
 
     PRIMARY KEY (employee_id, process_id),
 
@@ -52,18 +53,19 @@ CREATE TABLE IF NOT EXISTS employee_at_process (
 -- TABLE common_transition
 --==========================--
 CREATE TABLE IF NOT EXISTS common_transition (
-    step_id     UUID    NOT NULL,
-    next_step_id   UUID    NOT NULL,
+    process_id      UUID    NOT NULL,
+    step_id         INT     NOT NULL,
+    next_step_id    INT     NOT NULL,
 
-    PRIMARY KEY (step_id),
+    PRIMARY KEY (process_id, step_id),
 
-    FOREIGN KEY (step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT,
 
-    FOREIGN KEY (next_step_id)
-        REFERENCES step (id)
-        ON DELETE CASCADE ON UPDATE RESTRICT,
+    FOREIGN KEY (process_id, next_step_id)
+            REFERENCES step (process_id, id)
+            ON DELETE CASCADE ON UPDATE RESTRICT,
 
     CHECK (step_id != next_step_id)
 );
@@ -72,22 +74,23 @@ CREATE TABLE IF NOT EXISTS common_transition (
 -- TABLE conditional_transition
 --==========================--
 CREATE TABLE IF NOT EXISTS conditional_transition (
-    step_id         UUID    NOT NULL,
-    positive_step_id   UUID    NOT NULL,
-    negative_step_id   UUID    NOT NULL,
+    process_id          UUID    NOT NULL,
+    step_id             INT     NOT NULL,
+    positive_step_id    INT     NOT NULL,
+    negative_step_id    INT     NOT NULL,
 
-    PRIMARY KEY (step_id),
+    PRIMARY KEY (process_id, step_id),
 
-    FOREIGN KEY (step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT,
 
-    FOREIGN KEY (positive_step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, positive_step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT,
 
-    FOREIGN KEY (negative_step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, negative_step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -95,29 +98,50 @@ CREATE TABLE IF NOT EXISTS conditional_transition (
 -- TABLE final_type
 --==========================--
 CREATE TABLE IF NOT EXISTS final_type (
-    step_id         UUID    NOT NULL,
+    process_id      UUID    NOT NULL,
+    step_id         INT     NOT NULL,
     is_successful   BOOLEAN NOT NULL,
 
-    PRIMARY KEY (step_id),
+    PRIMARY KEY (process_id, step_id),
 
-    FOREIGN KEY (step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT
+);
+
+--==========================--
+-- TABLE process_transition
+--==========================--
+CREATE TABLE IF NOT EXISTS process_transition (
+    process_id      UUID    NOT NULL,
+    step_id         INT     NOT NULL,
+    next_process_id UUID    NOT NULL,
+
+    PRIMARY KEY (process_id, step_id),
+
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
+        ON DELETE CASCADE ON UPDATE RESTRICT,
+
+    FOREIGN KEY (next_process_id)
+        REFERENCES process (id)
+        ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 --==========================--
 -- TABLE substep
 --==========================--
 CREATE TABLE IF NOT EXISTS substep (
+    process_id  UUID    NOT NULL,
+    step_id     INT     NOT NULL,
     id          UUID    NOT NULL,
-    step_id     UUID    NOT NULL,
     duration    INT     NOT NULL DEFAULT 1,
     description TEXT    NOT NULL,
 
     PRIMARY KEY (id),
 
-    FOREIGN KEY (step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
         ON DELETE CASCADE ON UPDATE RESTRICT
 );
 
@@ -126,17 +150,19 @@ CREATE TABLE IF NOT EXISTS substep (
 --==========================--
 CREATE TABLE IF NOT EXISTS step_status (
     employee_id     UUID        NOT NULL,
-    step_id         UUID        NOT NULL,
-    is_completed    BOOLEAN     NOT NULL DEFAULT false,
+    process_id      UUID        NOT NULL,
+    step_id         INT         NOT NULL,
+    deadline        DATE,
+    completed_at    DATE,
 
-    PRIMARY KEY (employee_id, step_id),
+    PRIMARY KEY (employee_id, process_id, step_id),
 
     FOREIGN KEY (employee_id)
         REFERENCES public.employee (id)
         ON DELETE RESTRICT ON UPDATE RESTRICT,
 
-    FOREIGN KEY (step_id)
-        REFERENCES step (id)
+    FOREIGN KEY (process_id, step_id)
+        REFERENCES step (process_id, id)
         ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 

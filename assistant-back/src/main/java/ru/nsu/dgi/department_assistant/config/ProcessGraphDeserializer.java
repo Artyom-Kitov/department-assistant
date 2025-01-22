@@ -29,7 +29,7 @@ public class ProcessGraphDeserializer extends JsonDeserializer<ProcessGraphNode>
     }
 
     private ProcessGraphNode deserializeImpl(JsonNode jsonNode) {
-        UUID id = UUID.randomUUID();
+        int id = jsonNode.get("id").asInt();
         StepType type = StepType.of(jsonNode.get("type").intValue());
         int duration = jsonNode.get("duration").asInt(1);
         String metaInfo = jsonNode.get("metaInfo").toString();

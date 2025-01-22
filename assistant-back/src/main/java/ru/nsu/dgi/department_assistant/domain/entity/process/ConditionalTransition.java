@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -12,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.nsu.dgi.department_assistant.domain.entity.process.id.TransitionId;
 
 import java.util.UUID;
 
@@ -21,20 +23,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@IdClass(TransitionId.class)
 public class ConditionalTransition {
     @Id
+    @Column(name = "process_id", nullable = false)
+    private UUID processId;
+
+    @Id
     @Column(name = "step_id", nullable = false)
-    private UUID stepId;
+    private int stepId;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "step_id", referencedColumnName = "id")
-    private Step step;
+    @Column(name = "positive_step_id", nullable = false)
+    private int positiveStepId;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "positive_step_id", referencedColumnName = "id")
-    private Step positiveStep;
-
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "negative_step_id", referencedColumnName = "id")
-    private Step negativeStep;
+    @Column(name = "negative_step_id", nullable = false)
+    private int negativeStepId;
 }

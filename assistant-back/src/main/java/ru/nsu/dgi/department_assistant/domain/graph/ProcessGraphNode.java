@@ -11,7 +11,7 @@ import java.util.UUID;
 @Getter
 @Builder
 public class ProcessGraphNode {
-    private final UUID id;
+    private final int id;
     private final int type;
     private final int duration;
     private final String metaInfo;

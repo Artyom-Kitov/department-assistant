@@ -32,20 +32,25 @@ public class StepStatus {
     private UUID employeeId;
 
     @Id
-    @Column(name = "step_id", nullable = false)
-    private UUID stepId;
+    @Column(name = "process_id", nullable = false)
+    private UUID processId;
 
-    @Column(name = "completed_at")
-    private LocalDate completedAt;
+    @Id
+    @Column(name = "step_id", nullable = false)
+    private int stepId;
 
     @Column(name = "deadline")
     private LocalDate deadline;
 
+    @Column(name = "completed_at")
+    private LocalDate completedAt;
+
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id")
+    @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Employee employee;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "step_id", referencedColumnName = "id")
+    @JoinColumn(name = "process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
+    @JoinColumn(name = "step_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Step step;
 }
