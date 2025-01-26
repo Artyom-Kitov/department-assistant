@@ -2,7 +2,6 @@ package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 
 import java.util.List;
 
@@ -10,10 +9,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public final class CommonStepData extends StepData {
 
-    private final ProcessGraphNode next;
+    private final int next;
 
     @Override
-    public List<ProcessGraphNode> next() {
+    public List<Integer> next() {
         return List.of(next);
     }
 }

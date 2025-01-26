@@ -19,19 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ProcessGraphDeserializer extends JsonDeserializer<ProcessGraphNode> {
+public class ProcessGraphDeserializer extends JsonDeserializer<List<ProcessGraphNode>> {
 
     @Override
-    public ProcessGraphNode deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+    public List<ProcessGraphNode> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
         ObjectMapper mapper = (ObjectMapper) p.getCodec();
         JsonNode root = mapper.readTree(p);
-        return deserializeImpl(root);
+        List<ProcessGraphNode> nodes = new ArrayList<>();
+        for (JsonNode node : root) {
+            nodes.add(deserializeNode(node));
+        }
+        return nodes;
     }
 
-    private ProcessGraphNode deserializeImpl(JsonNode jsonNode) {
+    private ProcessGraphNode deserializeNode(JsonNode jsonNode) {
         int id = jsonNode.get("id").asInt();
         StepType type = StepType.of(jsonNode.get("type").intValue());
-        int duration = jsonNode.get("duration").asInt(1);
+        int duration = jsonNode.get("duration") != null ? jsonNode.get("duration").asInt(1) : 1;
         String metaInfo = jsonNode.get("metaInfo").toString();
         String description = jsonNode.get("description").toString();
 
@@ -55,7 +59,7 @@ public class ProcessGraphDeserializer extends JsonDeserializer<ProcessGraphNode>
     }
 
     private CommonStepData deserializeCommon(JsonNode node) {
-        ProcessGraphNode next = deserializeImpl(node.get("next"));
+        int next = node.get("next").asInt();
         return new CommonStepData(next);
     }
 
@@ -68,13 +72,13 @@ public class ProcessGraphDeserializer extends JsonDeserializer<ProcessGraphNode>
             int duration = subtaskNode.get("duration").asInt(1);
             subtasks.add(new Subtask(subtaskId, description, duration));
         }
-        ProcessGraphNode next = deserializeImpl(node.get("next"));
+        int next = node.get("next").asInt();
         return new SubtasksStepData(subtasks, next);
     }
 
     private ConditionalStepData deserializeConditional(JsonNode node) {
-        ProcessGraphNode ifTrue = deserializeImpl(node.get("ifTrue"));
-        ProcessGraphNode ifFalse = deserializeImpl(node.get("ifFalse"));
+        int ifTrue = node.get("ifTrue").asInt();
+        int ifFalse = node.get("ifFalse").asInt();
         return new ConditionalStepData(ifTrue, ifFalse);
     }
 

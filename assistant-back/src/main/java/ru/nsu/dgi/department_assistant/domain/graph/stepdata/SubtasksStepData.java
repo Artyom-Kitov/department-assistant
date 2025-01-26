@@ -12,10 +12,10 @@ import java.util.List;
 public final class SubtasksStepData extends StepData {
 
     private final List<Subtask> subtasks;
-    private final ProcessGraphNode next;
+    private final int next;
 
     @Override
-    public List<ProcessGraphNode> next() {
+    public List<Integer> next() {
         return List.of(next);
     }
 }

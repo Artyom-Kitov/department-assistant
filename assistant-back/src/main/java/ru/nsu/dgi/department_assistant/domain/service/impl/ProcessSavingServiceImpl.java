@@ -14,7 +14,7 @@ import ru.nsu.dgi.department_assistant.domain.entity.process.Substep;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.TransitionId;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
-import ru.nsu.dgi.department_assistant.domain.exception.ProcessNotFoundException;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
@@ -31,11 +31,11 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessReposito
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessTransitionRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
+import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -51,27 +51,31 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
     private final FinalTypeRepository finalTypeRepository;
     private final ProcessTransitionRepository processTransitionRepository;
 
+    private final ProcessGraphService processGraphService;
+
     @Transactional
     @Override
-    public UUID saveTemplate(String name, int totalDuration, ProcessGraphNode root) {
-        UUID id = UUID.randomUUID();
-        Process process = new Process(id, name, totalDuration);
+    public void saveTemplate(ProcessGraph graph) {
+        Process process = new Process(graph.id(), graph.name(), graph.duration());
         processRepository.save(process);
-        saveStep(process, root);
-        return id;
+        saveStep(graph.root(), graph);
     }
 
-    private void saveStep(Process process, ProcessGraphNode node) {
-        Step step = new Step(node.getId(), process.getId(), node.getDuration(), node.getMetaInfo(),
+    private void saveStep(int nodeId, ProcessGraph graph) {
+        if (stepRepository.existsById(new StepId(nodeId, graph.id()))) {
+            return;
+        }
+
+        ProcessGraphNode node = graph.getNode(nodeId);
+        Step step = new Step(node.getId(), graph.id(), node.getDuration(), node.getMetaInfo(),
                 node.getType(), node.getDescription());
         step = stepRepository.save(step);
-
         switch (node.getData()) {
-            case CommonStepData data -> saveCommonStep(process, step, data);
-            case ConditionalStepData data -> saveConditionalStep(process, step, data);
+            case CommonStepData data -> saveCommonStep(graph, step, data);
+            case ConditionalStepData data -> saveConditionalStep(graph, step, data);
             case FinalData data -> saveFinal(step, data);
             case ProcessTransitionStepData data -> saveProcessTransition(step, data);
-            case SubtasksStepData data -> saveSubtasksStep(process, step, data);
+            case SubtasksStepData data -> saveSubtasksStep(graph, step, data);
         }
     }
 
@@ -80,22 +84,22 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
                 .orElseThrow(() -> new InvalidProcessTemplateException("no step with id " + id));
     }
 
-    private void saveCommonStep(Process process, Step step, CommonStepData data) {
-        saveStep(process, data.getNext());
+    private void saveCommonStep(ProcessGraph graph, Step step, CommonStepData data) {
+        saveStep(data.getNext(), graph);
 
-        StepId id = new StepId(data.getNext().getId(), process.getId());
+        StepId id = new StepId(data.getNext(), graph.id());
         Step nextStep = findStepById(id);
-        CommonTransition transition = new CommonTransition(process.getId(), step.getId(), nextStep.getId());
+        CommonTransition transition = new CommonTransition(graph.id(), step.getId(), nextStep.getId());
         commonTransitionRepository.save(transition);
     }
 
-    private void saveConditionalStep(Process process, Step step, ConditionalStepData data) {
-        saveStep(process, data.getIfTrue());
-        saveStep(process, data.getIfFalse());
+    private void saveConditionalStep(ProcessGraph graph, Step step, ConditionalStepData data) {
+        saveStep(data.getIfTrue(), graph);
+        saveStep(data.getIfFalse(), graph);
 
-        StepId ifTrueId = new StepId(data.getIfTrue().getId(), process.getId());
-        StepId ifFalseId = new StepId(data.getIfFalse().getId(), process.getId());
-        ConditionalTransition transition = new ConditionalTransition(process.getId(), step.getId(),
+        StepId ifTrueId = new StepId(data.getIfTrue(), graph.id());
+        StepId ifFalseId = new StepId(data.getIfFalse(), graph.id());
+        ConditionalTransition transition = new ConditionalTransition(graph.id(), step.getId(),
                 ifTrueId.getId(), ifFalseId.getId());
         conditionalTransitionRepository.save(transition);
     }
@@ -112,11 +116,11 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
         processTransitionRepository.save(transition);
     }
 
-    private void saveSubtasksStep(Process process, Step step, SubtasksStepData data) {
-        saveStep(process, data.getNext());
+    private void saveSubtasksStep(ProcessGraph graph, Step step, SubtasksStepData data) {
+        saveStep(data.getNext(), graph);
 
         CommonTransition transition = new CommonTransition(step.getProcessId(), step.getId(),
-                data.getNext().getId());
+                data.getNext());
         commonTransitionRepository.save(transition);
 
         data.getSubtasks().stream()
@@ -127,7 +131,7 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
     @Override
     public ProcessGraph loadTemplate(UUID id) {
         Process process = processRepository.findById(id)
-                .orElseThrow(() -> new ProcessNotFoundException(id));
+                .orElseThrow(() -> new EntityNotFoundException(id.toString()));
 
         List<Step> steps = stepRepository.findAllByProcessId(process.getId());
         Map<Integer, ProcessGraphNode> nodesMap = steps.stream()
@@ -140,39 +144,25 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
                         .build())
                 .collect(Collectors.toMap(ProcessGraphNode::getId, node -> node));
 
-        resolveGraph(steps, nodesMap);
-
-        return ProcessGraph.builder()
-                .id(process.getId())
-                .name(process.getName())
-                .duration(process.getTotalDuration())
-                .body(getRoot(steps, nodesMap))
-                .build();
+        resolveData(steps, nodesMap);
+        return processGraphService.buildGraph(process.getName(), nodesMap.values().stream().toList(),
+                process.getTotalDuration());
     }
 
-    private ProcessGraphNode getRoot(List<Step> steps, Map<Integer, ProcessGraphNode> nodesMap) {
-        Set<Integer> ids = steps.stream().map(Step::getId).collect(Collectors.toSet());
-        for (ProcessGraphNode node : nodesMap.values()) {
-            node.next().forEach(n -> ids.remove(n.getId()));
-        }
-        return nodesMap.get(ids.stream().findAny().orElseThrow());
-    }
-
-    private void resolveGraph(List<Step> steps, Map<Integer, ProcessGraphNode> nodesMap) {
+    private void resolveData(List<Step> steps, Map<Integer, ProcessGraphNode> nodesMap) {
         for (Step step : steps) {
             ProcessGraphNode node = nodesMap.get(step.getId());
-            resolveNodeData(step, node, nodesMap);
+            resolveNodeData(step, node);
         }
     }
 
-    private void resolveNodeData(Step step, ProcessGraphNode node, Map<Integer, ProcessGraphNode> nodesMap) {
+    private void resolveNodeData(Step step, ProcessGraphNode node) {
         StepType type = StepType.of(node.getType());
         StepData data = switch (type) {
             case COMMON -> {
                 CommonTransition transition = commonTransitionRepository.findById(
                         new TransitionId(node.getId(), step.getProcessId())).orElseThrow();
-                ProcessGraphNode next = nodesMap.get(transition.getNextStepId());
-                yield new CommonStepData(next);
+                yield new CommonStepData(transition.getNextStepId());
             }
             case SUBTASKS -> {
                 List<Substep> substeps = substepRepository.findAllByStep(step);
@@ -181,15 +171,15 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
                         .toList();
                 CommonTransition transition = commonTransitionRepository.findById(
                         new TransitionId(node.getId(), step.getProcessId())).orElseThrow();
-                ProcessGraphNode next = nodesMap.get(transition.getNextStepId());
-                yield new SubtasksStepData(subtasks, next);
+                yield new SubtasksStepData(subtasks, transition.getNextStepId());
             }
             case CONDITIONAL -> {
                 ConditionalTransition transition = conditionalTransitionRepository.findById(
                         new TransitionId(node.getId(), step.getProcessId())).orElseThrow();
-                ProcessGraphNode ifTrue = nodesMap.get(transition.getPositiveStepId());
-                ProcessGraphNode ifFalse = nodesMap.get(transition.getNegativeStepId());
-                yield new ConditionalStepData(ifTrue, ifFalse);
+                yield new ConditionalStepData(
+                        transition.getPositiveStepId(),
+                        transition.getNegativeStepId()
+                );
             }
             case FINAL -> {
                 FinalType finalType = finalTypeRepository.findById(

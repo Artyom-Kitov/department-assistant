@@ -6,7 +6,6 @@ import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Builder
@@ -20,7 +19,7 @@ public class ProcessGraphNode {
     @Setter
     private StepData data;
 
-    public List<ProcessGraphNode> next() {
+    public List<Integer> next() {
         return data.next();
     }
 }

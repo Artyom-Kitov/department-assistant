@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,8 +19,10 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplate
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateShortDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,9 +35,10 @@ public class ProcessTemplateController {
     @Operation(
             summary = "Create new process template",
             description = """
-                    Note that the process must contain at least one final step where isSuccessful == true.
+                    Note that the process shouldn't have loops and
+                    must contain at least one final step where isSuccessful == true.
                     
-                    The process itself is represented as a tree, starting from the root vertex.
+                    The process itself is represented as list of steps with IDs. Step ID must be unique in the process.
                     The "data" field depends on the "type" value.
                     
                     Supported steps:
@@ -42,12 +46,13 @@ public class ProcessTemplateController {
                     **Basic step**
                     ```
                     {
+                        "id": 1,
                         "duration": 1,
                         "metaInfo": {},
                         "type": 1,
                         "description": "Отнести в деканат документ",
                         "data": {
-                            "next": { ... }
+                            "next": 2
                         }
                     }
                     ```
@@ -55,6 +60,7 @@ public class ProcessTemplateController {
                     **Subtasks step**
                     ```
                     {
+                        "id": 2,
                         "duration": 1,
                         "metaInfo": {},
                         "type": 2,
@@ -73,7 +79,7 @@ public class ProcessTemplateController {
                                     "Оригинал диплома"
                                 }
                             ],
-                            "next": { ... }
+                            "next": 3
                         }
                     }
                     ```
@@ -82,13 +88,14 @@ public class ProcessTemplateController {
                     
                     ```
                     {
+                        "id": 3,
                         "duration": 8,
                         "metaInfo": {},
                         "type": 3,
                         "description": "Претендент имеет высшее образование?",
                         "data": {
-                            "ifTrue": { ... },
-                            "ifFalse": { ... }
+                            "ifTrue": 4,
+                            "ifFalse": 5
                         }
                     }
                     ```
@@ -97,6 +104,7 @@ public class ProcessTemplateController {
                     
                     ```
                     {
+                        "id": 4,
                         "metaInfo": {},
                         "type": 4,
                         "description": "Претендент успешно трудоустроен",
@@ -110,6 +118,7 @@ public class ProcessTemplateController {
                     
                     ```
                     {
+                        "id": 5,
                         "metaInfo": {},
                         "type": 5,
                         "description": "Трудоустройство по ДГПХ",
@@ -144,12 +153,18 @@ public class ProcessTemplateController {
         return ResponseEntity.ok(processTemplateService.createProcessTemplate(request));
     }
 
+    @Operation(summary = "Get all process IDs")
+    @GetMapping
+    public ResponseEntity<List<ProcessTemplateShortDto>> getAll() {
+        return ResponseEntity.ok(processTemplateService.getAllProcesses());
+    }
+
     @Operation(
             summary = "Get process body by ID",
             description = """
                     The process is represented as described in the creation method.
                     
-                    See [here](#/process-template-controller/createTemplate) for the description.
+                    See [POST /api/v1/templates](#/process-template-controller/createTemplate) for more info.
                     """
     )
     @ApiResponses(
@@ -173,5 +188,12 @@ public class ProcessTemplateController {
     @GetMapping("/{id}")
     public ResponseEntity<ProcessTemplateResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(processTemplateService.getProcessById(id));
+    }
+
+    @Operation(summary = "Delete process template by ID")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable UUID id) {
+        processTemplateService.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }
