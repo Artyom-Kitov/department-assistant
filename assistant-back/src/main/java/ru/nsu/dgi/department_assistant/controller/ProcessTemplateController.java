@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -188,6 +189,12 @@ public class ProcessTemplateController {
     @GetMapping("/{id}")
     public ResponseEntity<ProcessTemplateResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(processTemplateService.getProcessById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> editById(@PathVariable UUID id, @RequestBody ProcessTemplateCreationRequestDto request) {
+        processTemplateService.updateById(id, request);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Delete process template by ID")

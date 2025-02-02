@@ -16,4 +16,6 @@ public interface ProcessTemplateService {
     List<ProcessTemplateShortDto> getAllProcesses();
 
     void deleteById(UUID id);
+
+    void updateById(UUID id, ProcessTemplateCreationRequestDto request);
 }

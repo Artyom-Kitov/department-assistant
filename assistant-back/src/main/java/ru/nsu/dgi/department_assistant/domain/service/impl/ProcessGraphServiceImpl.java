@@ -29,14 +29,14 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
     private final ProcessRepository processRepository;
 
     @Override
-    public ProcessGraph buildGraph(String name, List<ProcessGraphNode> nodes) {
+    public ProcessGraph buildGraph(UUID id, String name, List<ProcessGraphNode> nodes) {
         Map<Integer, ProcessGraphNode> nodesMap = nodes.stream()
                 .collect(Collectors.toMap(ProcessGraphNode::getId, node -> node));
         ProcessGraphNode root = findHeadNode(nodesMap);
         validateNoLoops(root.getId(), nodesMap, new HashSet<>(), new HashSet<>());
         int duration = calculateDuration(root.getId(), nodesMap);
         return ProcessGraph.builder()
-                .id(UUID.randomUUID())
+                .id(id)
                 .name(name)
                 .duration(duration)
                 .root(root.getId())

@@ -1,5 +1,6 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
     @Override
     public ProcessTemplateCreationResponseDto createProcessTemplate(ProcessTemplateCreationRequestDto request) {
         List<ProcessGraphNode> steps = request.steps();
-        ProcessGraph graph = processGraphService.buildGraph(request.name(), steps);
+        ProcessGraph graph = processGraphService.buildGraph(UUID.randomUUID(), request.name(), steps);
         processSavingService.saveTemplate(graph);
         return new ProcessTemplateCreationResponseDto(graph.id());
     }
@@ -65,5 +66,16 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
             throw new EntityEditException();
         }
         processRepository.deleteById(id);
+    }
+
+    @Transactional
+    @Override
+    public void updateById(UUID id, ProcessTemplateCreationRequestDto request) {
+        log.info("Updating process template with id = {}", id);
+        deleteById(id);
+        List<ProcessGraphNode> steps = request.steps();
+        ProcessGraph graph = processGraphService.buildGraph(id, request.name(), steps);
+        processSavingService.saveTemplate(graph);
+        log.info("Successfully update process template with id = {}", id);
     }
 }
