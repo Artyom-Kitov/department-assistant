@@ -4,7 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
+import ru.nsu.dgi.department_assistant.domain.graph.stepdata.SubtasksStepData;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -21,5 +23,15 @@ public class ProcessGraphNode {
 
     public List<Integer> next() {
         return data.next();
+    }
+
+    public int getDuration() {
+        if (data instanceof SubtasksStepData d) {
+            return d.getSubtasks().stream()
+                    .max(Comparator.comparingInt(Subtask::duration))
+                    .orElseThrow()
+                    .duration();
+        }
+        return duration;
     }
 }

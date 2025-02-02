@@ -2,7 +2,6 @@ package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
 
 import java.util.List;

@@ -203,4 +203,10 @@ public class ProcessTemplateController {
         processTemplateService.deleteById(id);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "Get process duration")
+    @GetMapping("/duration/{id}")
+    public ResponseEntity<Integer> getDuration(@PathVariable UUID id) {
+        return ResponseEntity.ok(processTemplateService.getDurationById(id));
+    }
 }

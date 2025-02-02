@@ -8,7 +8,9 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreatio
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateShortDto;
+import ru.nsu.dgi.department_assistant.domain.entity.process.Process;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityEditException;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.mapper.process.ProcessGraphMapper;
@@ -48,6 +50,15 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
         ProcessGraph graph = processSavingService.loadTemplate(id);
         log.info("Successfully retrieved process template with ID = {}", id);
         return processGraphMapper.toResponse(graph);
+    }
+
+    @Override
+    public int getDurationById(UUID id) {
+        log.info("Getting process duration by id = {}", id);
+        Process process = processRepository.findById(id)
+                        .orElseThrow(() -> new EntityNotFoundException(id.toString()));
+        log.info("Process with id = {} lasts {} days", id, process.getTotalDuration());
+        return process.getTotalDuration();
     }
 
     @Override

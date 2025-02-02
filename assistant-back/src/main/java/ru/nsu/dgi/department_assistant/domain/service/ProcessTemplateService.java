@@ -13,6 +13,8 @@ public interface ProcessTemplateService {
 
     ProcessTemplateResponseDto getProcessById(UUID id);
 
+    int getDurationById(UUID id);
+
     List<ProcessTemplateShortDto> getAllProcesses();
 
     void deleteById(UUID id);
