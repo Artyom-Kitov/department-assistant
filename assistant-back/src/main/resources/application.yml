@@ -3,9 +3,9 @@ spring:
     name: department-assistant
     version: 0.0.1-SNAPSHOT
   datasource:
-    url: jdbc:postgresql://localhost:5432/department-db
-    username: assistant-back
-    password: ZnVjayB5ZWFoIQ==
+    url: ${DEPARTMENT_DB_URI:jdbc:postgresql://localhost:5432/department-db}
+    username: ${DEPARTMENT_DB_USERNAME:assistant-back}
+    password: ${DEPARTMENT_DB_PASSWORD:ZnVjayB5ZWFoIQ==}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

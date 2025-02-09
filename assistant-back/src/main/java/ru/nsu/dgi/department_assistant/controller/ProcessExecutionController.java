@@ -44,7 +44,7 @@ public class ProcessExecutionController {
                     )
             }
     )
-    @PostMapping
+    @PostMapping("/start")
     public ResponseEntity<Void> startExecutionForEmployee(@RequestBody ProcessExecutionRequestDto request) {
         processExecutionService.startForEmployee(request);
         return ResponseEntity.ok().build();
