@@ -6,6 +6,7 @@ public record EmployeeRequestDto(
         String middleName,
         Boolean agreement,
         Boolean hasCompletedAdvancedCourses,
+        Boolean hasHigherEducation,
         Boolean needsMandatoryElection,
         String snils,
         String inn,

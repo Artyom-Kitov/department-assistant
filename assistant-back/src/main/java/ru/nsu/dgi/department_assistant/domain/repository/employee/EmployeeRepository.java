@@ -12,8 +12,6 @@ import java.util.UUID;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
-    List<Employee> findByLastName(String lastName);
-    List<Employee> findByIsArchived(boolean isArchived);
     @Query("SELECT e " +
             "FROM Employee e " +
             "LEFT JOIN FETCH e.employmentStatus " +
