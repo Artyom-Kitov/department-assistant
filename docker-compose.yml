@@ -10,3 +10,25 @@ services:
     ports:
       - "5432:5432"
     restart: always
+    networks:
+      - assistant-network
+
+  assistant-back:
+    container_name: assistant-back
+    environment:
+      - DEPARTMENT_DB_URI=jdbc:postgresql://nsu_department_database:5432/department-db
+      - DEPARTMENT_DB_USERNAME=assistant-back
+      - DEPARTMENT_DB_PASSWORD=ZnVjayB5ZWFoIQ==
+    build:
+      context: assistant-back/.
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - nsu_department_database
+    networks:
+      - assistant-network
+
+networks:
+  assistant-network:
+    driver: bridge
