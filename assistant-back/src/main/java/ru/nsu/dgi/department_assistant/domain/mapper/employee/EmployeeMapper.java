@@ -1,8 +1,10 @@
 package ru.nsu.dgi.department_assistant.domain.mapper.employee;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
@@ -42,5 +44,6 @@ public interface EmployeeMapper {
     @Mapping(target = "certificateOfNoCriminalRecord", ignore = true)
     @Mapping(target = "workExperience", ignore = true)
     @Mapping(target = "employments", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateRequestToEntity(EmployeeRequestDto employeeRequestDto, @MappingTarget Employee employee);
 }
