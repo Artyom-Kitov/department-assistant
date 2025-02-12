@@ -2,10 +2,12 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.EmployeeMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.employee.EmployeeRepository;
 import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
@@ -21,6 +23,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeMapper employeeMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<EmployeeResponseDto> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
 
@@ -30,12 +33,17 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EmployeeResponseDto getEmployee(UUID id) {
-        Employee employee = employeeRepository.findById(id).orElse(null);
+        Employee employee = employeeRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(id.toString())
+        );
+
         return employeeMapper.entityToResponseDto(employee);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EmployeeWithAllInfoResponseDto> getAllEmployeeWithAllInfos() {
         List<Employee> employees = employeeRepository.findAllEmployeesWithInfo();
 
@@ -45,13 +53,17 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EmployeeWithAllInfoResponseDto getEmployeeWithAllInfos(UUID id) {
-        Employee employee = employeeRepository.findEmployeeWithInfoById(id).orElse(null);
+        Employee employee = employeeRepository.findEmployeeWithInfoById(id).orElseThrow(
+                () -> new EntityNotFoundException(id.toString())
+        );
 
         return employeeMapper.entityToWithInfoResponse(employee);
     }
 
     @Override
+    @Transactional
     public EmployeeResponseDto createEmployee(EmployeeRequestDto employeeRequestDto) {
         Employee employee = employeeMapper.requestToEntity(employeeRequestDto);
         employeeRepository.save(employee);
@@ -60,16 +72,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional
     public EmployeeResponseDto updateEmployee(UUID id, EmployeeRequestDto employeeRequestDto) {
-        Employee employee = employeeRepository.getReferenceById(id);
+        Employee employee = employeeRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(id.toString())
+        );
         employeeMapper.updateRequestToEntity(employeeRequestDto, employee);
 
         return employeeMapper.entityToResponseDto(employee);
     }
 
     @Override
+    @Transactional
     public void deleteEmployee(UUID id) {
-        Employee employee = employeeRepository.getReferenceById(id);
-        employeeRepository.delete(employee);
+        if (!employeeRepository.existsById(id)) {
+            throw new EntityNotFoundException(id.toString());
+        }
+
+        employeeRepository.deleteById(id);
     }
 }

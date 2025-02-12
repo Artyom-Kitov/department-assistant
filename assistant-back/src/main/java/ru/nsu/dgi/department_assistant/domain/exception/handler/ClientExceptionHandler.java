@@ -14,7 +14,6 @@ import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 
 @Slf4j
-@Hidden
 @ControllerAdvice
 public class ClientExceptionHandler {
 
