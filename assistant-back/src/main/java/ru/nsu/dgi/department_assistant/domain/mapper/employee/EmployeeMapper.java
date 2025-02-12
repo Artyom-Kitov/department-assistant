@@ -17,7 +17,8 @@ import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
         EmploymentRecordMapper.class,
         PassportInfoMapper.class,
         WorkExperienceMapper.class,
-        CertificateOfNoCriminalRecordMapper.class
+        CertificateOfNoCriminalRecordMapper.class,
+        EmployeeEmploymentMapper.class
 })
 public interface EmployeeMapper {
     EmployeeResponseDto entityToResponseDto(Employee employee);

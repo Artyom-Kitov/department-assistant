@@ -8,6 +8,7 @@ public record EmployeeResponseDto(
         Boolean agreement,
         Boolean hasCompletedAdvancedCourses,
         Boolean needsMandatoryElection,
+        Boolean hasHigherEducation,
         String snils,
         String inn,
         Boolean isArchived

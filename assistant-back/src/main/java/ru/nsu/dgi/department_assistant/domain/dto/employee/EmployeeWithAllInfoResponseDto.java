@@ -1,5 +1,7 @@
 package ru.nsu.dgi.department_assistant.domain.dto.employee;
 
+import java.util.List;
+
 public record EmployeeWithAllInfoResponseDto (
         String id,
         String firstName,
@@ -12,6 +14,7 @@ public record EmployeeWithAllInfoResponseDto (
         PassportInfoResponseDto passportInfo,
         WorkExperienceResponseDto workExperience,
         CertificateOfNoCriminalRecordResponseDto certificateOfNoCriminalRecord,
+        List<EmployeeEmploymentResponseDto> employments,
         Boolean agreement,
         Boolean hasCompletedAdvancedCourses,
         Boolean needsMandatoryElection,
