@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,9 +49,9 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping
-    public ResponseEntity<Void> executeStep(@RequestParam UUID employeeId, @RequestBody StepExecutedDto dto) {
-        processExecutionService.executeStep(employeeId, dto);
+    @PostMapping("/common")
+    public ResponseEntity<Void> executeCommonStep(@RequestParam UUID employeeId, @RequestBody StepExecutedDto dto) {
+        processExecutionService.executeCommonStep(employeeId, dto);
         return ResponseEntity.ok().build();
     }
 }

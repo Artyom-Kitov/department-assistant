@@ -8,5 +8,5 @@ import java.util.UUID;
 public interface ProcessExecutionService {
     void startForEmployee(ProcessExecutionRequestDto request);
 
-    void executeStep(UUID employeeId, StepExecutedDto dto);
+    void executeCommonStep(UUID employeeId, StepExecutedDto dto);
 }
