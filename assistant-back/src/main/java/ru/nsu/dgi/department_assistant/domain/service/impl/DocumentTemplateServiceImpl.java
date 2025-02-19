@@ -5,6 +5,9 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import ru.nsu.dgi.department_assistant.domain.dto.document.DocumentTemplateDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.document.DocumentTemplate;
 import ru.nsu.dgi.department_assistant.domain.repository.document.DocumentTemplateRepository;
 import ru.nsu.dgi.department_assistant.domain.service.DocumentTemplateService;
@@ -44,14 +47,19 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
     }
 
     @Override
-    public DocumentTemplate getTemplateById(Integer id) {
-        return documentTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Шаблон не найден"));
+    public DocumentTemplateDto getTemplateById(Integer id) {
+        DocumentTemplate template = documentTemplateRepository.findById(id).orElseThrow();
+        return new DocumentTemplateDto(template.getId(), template.getTitle(), template.getTemplateData());
     }
 
     @Override
-    public DocumentTemplate saveTemplate(String title, XWPFDocument document) {
+    public DocumentTemplateDto updateTemplate(Integer id, DocumentTemplateDto documentTemplateDto) {
         return null;
+    }
+
+    @Override
+    public void saveTemplateFromOutside(MultipartFile file) {
+
     }
 
     @Override
@@ -73,6 +81,13 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
     }
 
     @Override
+    public Map<String, String> buildMapForPerson(EmployeeResponseDto employeeResponseDto) {
+        return null;
+    }
+    // add map generating function or add it in bd
+    // add padegi
+
+    @Override
     public Path saveGeneratedDocument(XWPFDocument document, String fileName) {
         Path filePath = Paths.get("/generated-docs/", fileName + ".docx"); //change path afterwards!!!
 
@@ -92,3 +107,6 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
         documentTemplateRepository.deleteById(id);
     }
 }
+
+// add exceptions
+
