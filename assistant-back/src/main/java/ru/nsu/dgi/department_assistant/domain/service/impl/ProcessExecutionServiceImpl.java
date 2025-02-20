@@ -3,11 +3,14 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.EmployeeAtProcess;
@@ -33,8 +36,10 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -80,11 +85,26 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         }
         LocalDate completedAt = LocalDate.now();
         stepStatus.setCompletedAt(completedAt);
+        stepStatus.setIsSuccessful(true);
         stepStatusRepository.save(stepStatus);
-
         completeNextIfFinalOrTransition(stepStatus);
-        // TODO: think about how to save step execution again...
-        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<StepStatusDto> getStatuses(ProcessExecutionStatusRequestDto request) {
+        var employeeAtProcessId = new EmployeeAtProcessId(request.employeeId(), request.processId());
+        if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
+            throw new EntityNotFoundException(employeeAtProcessId.toString());
+        }
+        return stepStatusRepository.findByEmployeeAndStartProcess(request.employeeId(), request.processId()).stream()
+                .map(status -> new StepStatusDto(
+                        status.getStepId(),
+                        status.getStartProcessId(),
+                        status.getDeadline(),
+                        status.getCompletedAt(),
+                        status.getIsSuccessful()
+                ))
+                .collect(Collectors.toList());
     }
 
     private void completeNextIfFinalOrTransition(StepStatus stepStatus) {
@@ -109,7 +129,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     private void completeTransition(StepStatus stepStatus) {
         stepStatus.setCompletedAt(LocalDate.now());
         stepStatusRepository.save(stepStatus);
-
+        // TODO: add subprocess steps
     }
 
     private boolean possibleToComplete(StepStatus stepStatus) {
@@ -154,7 +174,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         ProcessGraphNode node = graph.getNode(nodeId);
         LocalDate endDate = startDate != null ? startDate.plusDays(node.getDuration()) : null;
 
-        StepStatus stepStatus = new StepStatus(employee.getId(), processId, node.getId(), endDate, null, null);
+        StepStatus stepStatus = new StepStatus(employee.getId(), processId, node.getId(), processId, endDate, null, null);
         stepStatusRepository.save(stepStatus);
         if (node.getData() instanceof SubtasksStepData d) {
             d.getSubtasks().forEach(task -> {

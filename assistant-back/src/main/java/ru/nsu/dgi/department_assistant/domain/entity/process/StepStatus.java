@@ -41,6 +41,9 @@ public class StepStatus {
     @Column(name = "step_id", nullable = false)
     private int stepId;
 
+    @Column(name = "start_process_id", nullable = false)
+    private UUID startProcessId;
+
     @Column(name = "deadline")
     private LocalDate deadline;
 
@@ -64,11 +67,12 @@ public class StepStatus {
     private Process startProcess;
 
     @Builder
-    public StepStatus(UUID employeeId, UUID processId, int stepId, LocalDate deadline, LocalDate completedAt,
+    public StepStatus(UUID employeeId, UUID processId, int stepId, UUID startProcessId, LocalDate deadline, LocalDate completedAt,
                       Boolean isSuccessful) {
         this.employeeId = employeeId;
         this.processId = processId;
         this.stepId = stepId;
+        this.startProcessId = startProcessId;
         this.deadline = deadline;
         this.completedAt = completedAt;
         this.isSuccessful = isSuccessful;
