@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +31,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/templates")
 @RequiredArgsConstructor
+@Validated
 public class ProcessTemplateController {
 
     private final ProcessTemplateService processTemplateService;
@@ -150,7 +153,7 @@ public class ProcessTemplateController {
     )
     @PostMapping
     public ResponseEntity<ProcessTemplateCreationResponseDto> createTemplate(
-            @RequestBody ProcessTemplateCreationRequestDto request) {
+            @Valid @RequestBody ProcessTemplateCreationRequestDto request) {
         return ResponseEntity.ok(processTemplateService.createProcessTemplate(request));
     }
 
@@ -192,7 +195,7 @@ public class ProcessTemplateController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> editById(@PathVariable UUID id, @RequestBody ProcessTemplateCreationRequestDto request) {
+    public ResponseEntity<Void> editById(@PathVariable UUID id, @Valid @RequestBody ProcessTemplateCreationRequestDto request) {
         processTemplateService.updateById(id, request);
         return ResponseEntity.ok().build();
     }

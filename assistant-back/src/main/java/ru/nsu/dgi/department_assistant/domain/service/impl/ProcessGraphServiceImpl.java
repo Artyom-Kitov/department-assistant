@@ -96,8 +96,7 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
             );
             case SubtasksStepData data -> node.getDuration() + data.getSubtasks().stream()
                     .mapToInt(Subtask::duration)
-                    .max()
-                    .orElseThrow(() -> new InvalidProcessTemplateException("no subtasks found"))
+                    .sum()
                     + calculateDuration(data.getNext(), nodes);
             case FinalData ignored -> 0;
             case ProcessTransitionStepData data -> processRepository.findById(data.getNextProcess())
