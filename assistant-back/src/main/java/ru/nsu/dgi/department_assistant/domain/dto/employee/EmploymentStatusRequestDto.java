@@ -2,8 +2,8 @@ package ru.nsu.dgi.department_assistant.domain.dto.employee;
 
 import java.util.UUID;
 
-public record PostResponseDto(
-        Integer id,
+public record EmploymentStatusRequestDto(
         UUID employeeId,
-        String name
+        Boolean isEmployedInNsu,
+        String employmentInfo
 ) {}

@@ -2,8 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.dto.employee;
 
 import java.util.UUID;
 
-public record PostResponseDto(
-        Integer id,
+public record WorkExperienceRequestDto(
         UUID employeeId,
-        String name
+        Integer days
 ) {}

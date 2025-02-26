@@ -1,9 +1,10 @@
 package ru.nsu.dgi.department_assistant.domain.dto.employee;
 
 import java.util.List;
+import java.util.UUID;
 
 public record EmployeeWithAllInfoResponseDto (
-        String id,
+        UUID id,
         String firstName,
         String lastName,
         String middleName,
