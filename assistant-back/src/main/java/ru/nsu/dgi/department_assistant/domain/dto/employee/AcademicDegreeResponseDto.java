@@ -6,4 +6,5 @@ public record AcademicDegreeResponseDto(
         UUID employeeId,
         Integer id,
         String name
-) {}
+) {
+}

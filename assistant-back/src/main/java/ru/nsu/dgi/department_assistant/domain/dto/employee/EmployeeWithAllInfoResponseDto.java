@@ -3,7 +3,7 @@ package ru.nsu.dgi.department_assistant.domain.dto.employee;
 import java.util.List;
 import java.util.UUID;
 
-public record EmployeeWithAllInfoResponseDto (
+public record EmployeeWithAllInfoResponseDto(
         UUID id,
         String firstName,
         String lastName,
@@ -22,4 +22,5 @@ public record EmployeeWithAllInfoResponseDto (
         String snils,
         String inn,
         Boolean isArchived
-) {}
+) {
+}

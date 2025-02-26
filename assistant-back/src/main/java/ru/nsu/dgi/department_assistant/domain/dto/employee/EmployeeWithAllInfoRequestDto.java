@@ -20,4 +20,5 @@ public record EmployeeWithAllInfoRequestDto(
         String snils,
         String inn,
         Boolean isArchived
-) {}
+) {
+}

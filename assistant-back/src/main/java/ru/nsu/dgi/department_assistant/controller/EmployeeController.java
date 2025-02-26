@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
@@ -163,8 +164,8 @@ public class EmployeeController {
                     )
             }
     )
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable("id") UUID id) {
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteEmployee(@RequestParam("id") UUID id) {
         employeeService.deleteEmployee(id);
         return ResponseEntity.noContent().build();
     }

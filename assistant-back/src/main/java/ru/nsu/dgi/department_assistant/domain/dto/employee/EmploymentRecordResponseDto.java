@@ -7,4 +7,5 @@ public record EmploymentRecordResponseDto(
         Integer id,
         UUID employeeId,
         LocalDate dateOfReceipt
-) {}
+) {
+}

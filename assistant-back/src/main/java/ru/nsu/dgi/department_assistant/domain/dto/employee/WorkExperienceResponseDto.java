@@ -6,4 +6,5 @@ public record WorkExperienceResponseDto(
         Integer id,
         UUID employeeId,
         Integer days
-) {}
+) {
+}

@@ -6,4 +6,5 @@ public record EmployeeEmploymentRequestDto(
         UUID employeeId,
         PostRequestDto post,
         EmploymentTypeRequestDto employmentType
-) {}
+) {
+}

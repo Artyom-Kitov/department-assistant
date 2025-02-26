@@ -10,4 +10,5 @@ public record ContactsResponseDto(
         String email,
         String nsuEmail,
         String additionalInfo
-) {}
+) {
+}

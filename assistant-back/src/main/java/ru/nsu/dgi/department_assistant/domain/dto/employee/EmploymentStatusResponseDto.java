@@ -7,4 +7,5 @@ public record EmploymentStatusResponseDto(
         UUID employeeId,
         Boolean isEmployedInNsu,
         String employmentInfo
-) {}
+) {
+}

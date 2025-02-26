@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeResponseDto;
@@ -28,33 +29,32 @@ public class AcademicDegreeController {
         return ResponseEntity.ok(academicDegreeService.getAll());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AcademicDegreeResponseDto> getAcademicDegreeById(@PathVariable int id) {
-        return ResponseEntity.ok(academicDegreeService.getById(id));
+    @GetMapping("/employee")
+    public ResponseEntity<AcademicDegreeResponseDto> getAcademicDegreeByEmployeeId(
+            @RequestParam("employeeId") UUID employeeId
+    ) {
+        return ResponseEntity.ok(academicDegreeService.getByEmployeeId(employeeId));
     }
 
-    @GetMapping("/employee/{id}")
-    public ResponseEntity<AcademicDegreeResponseDto> getAcademicDegreeByEmployeeId(@PathVariable UUID id) {
-        return ResponseEntity.ok(academicDegreeService.getByEmployeeId(id));
-    }
-
-    @PostMapping()
+    @PostMapping("/create")
     public ResponseEntity<AcademicDegreeResponseDto> createAcademicDegree(
+            @RequestParam("employeeId") UUID employeeId,
             @RequestBody AcademicDegreeRequestDto academicDegree
     ) {
-        return ResponseEntity.ok(academicDegreeService.create(academicDegree));
+        return ResponseEntity.ok(academicDegreeService.create(employeeId, academicDegree));
     }
 
-    @PutMapping()
+    @PutMapping("/update")
     public ResponseEntity<AcademicDegreeResponseDto> updateAcademicDegree(
+            @RequestParam("employeeId") UUID employeeId,
             @RequestBody AcademicDegreeRequestDto academicDegree
     ) {
-        return ResponseEntity.ok(academicDegreeService.update(academicDegree));
+        return ResponseEntity.ok(academicDegreeService.update(employeeId, academicDegree));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAcademicDegree(@PathVariable UUID id) {
-        academicDegreeService.deleteByEmployeeId(id);
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteAcademicDegree(@RequestParam("employeeId") UUID employeeId) {
+        academicDegreeService.deleteByEmployeeId(employeeId);
         return ResponseEntity.noContent().build();
     }
 }

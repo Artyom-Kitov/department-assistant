@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.AcademicDegree;
-import ru.nsu.dgi.department_assistant.domain.entity.employee.Contacts;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
@@ -40,50 +39,42 @@ public class AcademicDegreeServiceImpl implements AcademicDegreeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public AcademicDegreeResponseDto getById(Integer id) {
-        if (id == null) {
-            throw new NullPropertyException("Id must not be null");
-        }
-        log.info("getting academic degree by id: {}", id);
-        AcademicDegree academicDegree = academicDegreeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
-        log.info("found academic degree by id: {}", academicDegree.getId());
-
-        return academicDegreeMapper.entityToResponseDto(academicDegree);
-    }
-
-    @Override
     @Transactional
-    public AcademicDegreeResponseDto create(AcademicDegreeRequestDto academicDegreeRequestDto) {
-        if (academicDegreeRequestDto.employeeId() == null) {
+    public AcademicDegreeResponseDto create(
+            UUID employeeId,
+            AcademicDegreeRequestDto academicDegreeRequestDto
+    ) {
+        if (employeeId == null) {
             throw new NullPropertyException("EmployeeId must not be null");
         }
-        log.info("creating academic degree for employee {}", academicDegreeRequestDto.employeeId());
+        log.info("creating academic degree for employee {}", employeeId);
         AcademicDegree academicDegree = academicDegreeMapper.toEntity(academicDegreeRequestDto);
-        setEmployee(academicDegreeRequestDto.employeeId(), academicDegree);
+        setEmployee(employeeId, academicDegree);
         academicDegreeRepository.save(academicDegree);
-        log.info("successfully created academic degree for employee {}", academicDegreeRequestDto.employeeId());
+        log.info("successfully created academic degree for employee {}", employeeId);
 
         return academicDegreeMapper.entityToResponseDto(academicDegree);
     }
 
     @Override
     @Transactional
-    public AcademicDegreeResponseDto update(AcademicDegreeRequestDto academicDegreeRequestDto) {
-        if (academicDegreeRequestDto.employeeId() == null) {
+    public AcademicDegreeResponseDto update(
+            UUID employeeId,
+            AcademicDegreeRequestDto academicDegreeRequestDto
+    ) {
+        if (employeeId == null) {
             throw new NullPropertyException("EmployeeId must not be null");
         }
-        log.info("updating academic degree for employee {}", academicDegreeRequestDto.employeeId());
-        Employee employee = employeeRepository.findById(academicDegreeRequestDto.employeeId())
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(academicDegreeRequestDto.employeeId())));
+        log.info("updating academic degree for employee {}", employeeId);
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
         AcademicDegree academicDegree = employee.getAcademicDegree();
         if (academicDegree == null) {
-            throw new EntityNotFoundException("Academic degree of" + academicDegreeRequestDto.employeeId());
+            throw new EntityNotFoundException("Academic degree of" + employeeId);
         }
         academicDegreeMapper.updateRequestToEntity(academicDegreeRequestDto, academicDegree);
         academicDegreeRepository.save(academicDegree);
-        log.info("successfully updated academic degree for employee {}", academicDegreeRequestDto.employeeId());
+        log.info("successfully updated academic degree for employee {}", employeeId);
 
         return academicDegreeMapper.entityToResponseDto(academicDegree);
     }
@@ -119,6 +110,7 @@ public class AcademicDegreeServiceImpl implements AcademicDegreeService {
         if (academicDegree == null) {
             throw new EntityNotFoundException(String.valueOf(id));
         }
+        employee.setAcademicDegree(null);
         academicDegreeRepository.delete(academicDegree);
         log.info("successfully deleted academic degree by employee id: {}", id);
     }

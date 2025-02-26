@@ -14,4 +14,5 @@ public record EmployeeResponseDto(
         String snils,
         String inn,
         Boolean isArchived
-) {}
+) {
+}

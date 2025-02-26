@@ -29,7 +29,6 @@ public class ContactsServiceImpl implements ContactsService {
     private final OrganizationalUnitRepository organizationalUnitRepository;
     private final ContactsRepository contactsRepository;
     private final ContactsMapper contactsMapper;
-    private final ConfigurationPropertiesAutoConfiguration configurationPropertiesAutoConfiguration;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,8 +46,7 @@ public class ContactsServiceImpl implements ContactsService {
     @Transactional(readOnly = true)
     public ContactsResponseDto getById(Long id) {
         log.info("getting contact by id {}", id);
-        Contacts contact = contactsRepository
-                .findById(id)
+        Contacts contact = contactsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
         log.info("successfully find contact by id {}", id);
 
@@ -57,61 +55,68 @@ public class ContactsServiceImpl implements ContactsService {
 
     @Override
     @Transactional
-    public ContactsResponseDto create(ContactsRequestDto contactsRequestDto) {
-        if (contactsRequestDto.employeeId() == null && contactsRequestDto.organizationalUnitId() == null) {
-            throw new NullPropertyException("One of employeeId and organizationalUnitId must not be null");
+    public ContactsResponseDto createEmployeeContact(UUID employeeId, ContactsRequestDto contactsRequestDto) {
+        if (employeeId == null) {
+            throw new NullPropertyException("EmployeeId must not be null");
         }
-        log.info("creating a new contact");
+        log.info("creating a new contact for employee id {}", employeeId);
         Contacts contact = contactsMapper.toEntity(contactsRequestDto);
-
-        setEmployeeAndOrganizationalUnit(
-                contactsRequestDto.employeeId(),
-                contactsRequestDto.organizationalUnitId(),
-                contact
-        );
-
+        setEmployee(employeeId, contact);
         contactsRepository.save(contact);
-        log.info("successfully created a contact");
+        log.info("successfully created a contact for employee id {}", employeeId);
 
         return contactsMapper.entityToResponseDto(contact);
     }
 
     @Override
     @Transactional
-    public ContactsResponseDto updateEmployeeContact(ContactsRequestDto contactsRequestDto) {
-        log.info("updating contact by employee id {}", contactsRequestDto.employeeId());
-        Employee employee = employeeRepository.findById(contactsRequestDto.employeeId())
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(contactsRequestDto.employeeId())));
+    public ContactsResponseDto createOrganizationalUnitContact(
+            Long organizationalUnitId,
+            ContactsRequestDto contactsRequestDto
+    ) {
+        if (organizationalUnitId == null) {
+            throw new NullPropertyException("EmployeeId must not be null");
+        }
+        log.info("creating a new contact for organizational unit id {}", organizationalUnitId);
+        Contacts contact = contactsMapper.toEntity(contactsRequestDto);
+        setOrganizationalUnit(organizationalUnitId, contact);
+        contactsRepository.save(contact);
+        log.info("successfully created a contact for organizational unit id {}", organizationalUnitId);
+
+        return contactsMapper.entityToResponseDto(contact);
+    }
+
+    @Override
+    @Transactional
+    public ContactsResponseDto updateEmployeeContact(UUID employeeId, ContactsRequestDto contactsRequestDto) {
+        log.info("updating contact by employee id {}", employeeId);
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
         Contacts contact = employee.getContacts();
         if (contact == null) {
-            throw new EntityNotFoundException(
-                    "Contacts of " + String.valueOf(contactsRequestDto.employeeId())
-            );
+            throw new EntityNotFoundException("Contacts of " + employeeId);
         }
         contactsMapper.updateRequestToEntity(contactsRequestDto, contact);
-        log.info("successfully updated contact by employee id {}", contactsRequestDto.employeeId());
+        log.info("successfully updated contact by employee id {}", employeeId);
 
         return contactsMapper.entityToResponseDto(contact);
     }
 
     @Override
     @Transactional
-    public ContactsResponseDto updateOrganizationalUnitContact(ContactsRequestDto contactsRequestDto) {
-        log.info("updating contact by organizational unit id {}", contactsRequestDto.organizationalUnitId());
-        OrganizationalUnit unit = organizationalUnitRepository.findById(contactsRequestDto.organizationalUnitId())
-                .orElseThrow(
-                        () -> new EntityNotFoundException(String.valueOf(contactsRequestDto.organizationalUnitId()))
-                );
+    public ContactsResponseDto updateOrganizationalUnitContact(
+            Long organizationalUnitId,
+            ContactsRequestDto contactsRequestDto
+    ) {
+        log.info("updating contact by organizational unit id {}", organizationalUnitId);
+        OrganizationalUnit unit = organizationalUnitRepository.findById(organizationalUnitId)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(organizationalUnitId)));
         Contacts contact = unit.getContacts();
         if (contact == null) {
-            throw new EntityNotFoundException(
-                    "Contacts of " + String.valueOf(contactsRequestDto.organizationalUnitId())
-            );
+            throw new EntityNotFoundException("Contacts of " + organizationalUnitId);
         }
         contactsMapper.updateRequestToEntity(contactsRequestDto, contact);
-        log.info(
-                "successfully updated contact by organizational unit id {}", contactsRequestDto.organizationalUnitId()
-        );
+        log.info("successfully updated contact by organizational unit id {}", organizationalUnitId);
 
         return contactsMapper.entityToResponseDto(contact);
     }
@@ -124,9 +129,7 @@ public class ContactsServiceImpl implements ContactsService {
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
         Contacts contact = employee.getContacts();
         if (contact == null) {
-            throw new EntityNotFoundException(
-                    "Contacts of " + id
-            );
+            throw new EntityNotFoundException("Contacts of " + id);
         }
         log.info("successfully got contact by employee id {}", id);
 
@@ -141,9 +144,7 @@ public class ContactsServiceImpl implements ContactsService {
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
         Contacts contact = organizationalUnit.getContacts();
         if (contact == null) {
-            throw new EntityNotFoundException(
-                    "Contacts of " + id
-            );
+            throw new EntityNotFoundException("Contacts of " + id);
         }
         log.info("successfully got contact by organizational unit id {}", id);
 
@@ -163,6 +164,7 @@ public class ContactsServiceImpl implements ContactsService {
         if (contact == null) {
             throw new EntityNotFoundException("Contacts of " + id);
         }
+        employee.setContacts(null);
         contactsRepository.delete(contact);
         log.info("successfully deleted contact by employee id {}", id);
     }
@@ -174,20 +176,17 @@ public class ContactsServiceImpl implements ContactsService {
             throw new NullPropertyException("OrganizationalUnitId must not be null");
         }
         log.info("deleting contact by organizational unit id {}", id);
-        OrganizationalUnit organizationalUnit = organizationalUnitRepository
-                .findById(id)
-                .orElseThrow(
-                        () -> new EntityNotFoundException(String.valueOf(id))
-                );
+        OrganizationalUnit organizationalUnit = organizationalUnitRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
         Contacts contact = organizationalUnit.getContacts();
         if (contact == null) {
             throw new EntityNotFoundException("Contacts of " + id);
         }
+        if (contact.getOrganizationalUnit() != null && contact.getOrganizationalUnit().getContacts() != null) {
+            contact.getOrganizationalUnit().setContacts(null);
+        }
         contactsRepository.delete(contact);
-        log.info(
-                "successfully deleted contact by organizational unit id {}",
-                id
-        );
+        log.info("successfully deleted contact by organizational unit id {}", id);
     }
 
     private void setEmployee(UUID employeeId, Contacts contactToChange) {
@@ -206,18 +205,5 @@ public class ContactsServiceImpl implements ContactsService {
         log.info("found organizational unit with id {} for contacts", organizationalUnitId);
         contactToChange.setOrganizationalUnit(organizationalUnit);
         organizationalUnit.setContacts(contactToChange);
-    }
-
-    private void setEmployeeAndOrganizationalUnit(
-            UUID employeeId,
-            Long organizationalUnitId,
-            Contacts contactToChange
-    ) {
-        if (employeeId != null) {
-            setEmployee(employeeId, contactToChange);
-        }
-        if (organizationalUnitId != null) {
-            setOrganizationalUnit(organizationalUnitId, contactToChange);
-        }
     }
 }

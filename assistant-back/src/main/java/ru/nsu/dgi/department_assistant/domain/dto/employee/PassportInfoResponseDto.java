@@ -6,4 +6,5 @@ public record PassportInfoResponseDto(
         Integer id,
         UUID employeeId,
         String passportInfo
-) {}
+) {
+}
