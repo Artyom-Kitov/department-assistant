@@ -7,6 +7,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 
@@ -17,7 +18,8 @@ import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
         EmploymentRecordMapper.class,
         PassportInfoMapper.class,
         WorkExperienceMapper.class,
-        CertificateOfNoCriminalRecordMapper.class
+        CertificateOfNoCriminalRecordMapper.class,
+        EmployeeEmploymentMapper.class
 })
 public interface EmployeeMapper {
     EmployeeResponseDto entityToResponseDto(Employee employee);
@@ -32,6 +34,9 @@ public interface EmployeeMapper {
     @Mapping(target = "workExperience", ignore = true)
     @Mapping(target = "employments", ignore = true)
     Employee requestToEntity(EmployeeRequestDto employeeRequestDto);
+
+    @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID())")
+    Employee requestWithInfoToEntity(EmployeeWithAllInfoRequestDto employeeWithAllInfoRequestDto);
 
     EmployeeWithAllInfoResponseDto entityToWithInfoResponse(Employee employee);
 

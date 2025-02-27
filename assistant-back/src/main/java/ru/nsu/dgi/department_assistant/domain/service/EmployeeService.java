@@ -9,10 +9,16 @@ import java.util.UUID;
 
 public interface EmployeeService {
     List<EmployeeResponseDto> getAllEmployees();
+
     EmployeeResponseDto getEmployee(UUID id);
+
     List<EmployeeWithAllInfoResponseDto> getAllEmployeeWithAllInfos();
+
     EmployeeWithAllInfoResponseDto getEmployeeWithAllInfos(UUID id);
+
     EmployeeResponseDto createEmployee(EmployeeRequestDto employeeRequestDto);
+
     EmployeeResponseDto updateEmployee(UUID id, EmployeeRequestDto employeeRequestDto);
+
     void deleteEmployee(UUID id);
 }

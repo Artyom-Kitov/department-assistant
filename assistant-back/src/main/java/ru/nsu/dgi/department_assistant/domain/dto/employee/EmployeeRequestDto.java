@@ -11,4 +11,5 @@ public record EmployeeRequestDto(
         String snils,
         String inn,
         Boolean isArchived
-) {}
+) {
+}
