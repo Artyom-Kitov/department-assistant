@@ -8,6 +8,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.PassportInfoRequestDt
 import ru.nsu.dgi.department_assistant.domain.dto.employee.PassportInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.PassportInfo;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.PassportInfoMapper;
@@ -66,6 +67,11 @@ public class PassportInfoServiceImpl implements PassportInfoService {
         PassportInfo passportInfo = passportInfoMapper.toEntity(passportInfoRequestDto);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getPassportInfo() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Passport info for employee id " + employeeId + " already exists"
+            );
+        }
         passportInfo.setEmployee(employee);
         employee.setPassportInfo(passportInfo);
         passportInfoRepository.save(passportInfo);

@@ -121,7 +121,9 @@ public class EmployeeController {
     )
     @PostMapping()
     public ResponseEntity<EmployeeResponseDto> createEmployee(@RequestBody EmployeeRequestDto employeeRequestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.createEmployee(employeeRequestDto));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(employeeService.createEmployee(employeeRequestDto));
     }
 
     @Operation(

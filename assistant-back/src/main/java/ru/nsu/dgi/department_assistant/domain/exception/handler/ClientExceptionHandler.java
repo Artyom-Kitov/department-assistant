@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import ru.nsu.dgi.department_assistant.domain.dto.EntityNotFoundDto;
 import ru.nsu.dgi.department_assistant.domain.dto.InvalidRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplateDto;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
@@ -35,6 +36,15 @@ public class ClientExceptionHandler {
         return new ResponseEntity<>(new InvalidRequestDto(
                 "Expected non-null property/properties but got null. Message: " + e.getMessage()),
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(EntityAlreadyExistsException.class)
+    public ResponseEntity<InvalidRequestDto> handleEntityAlreadyExistsException(EntityAlreadyExistsException e) {
+        log.error("Entity already exists exception handled:", e);
+        return new ResponseEntity<>(
+                new InvalidRequestDto("Entity you're trying to create is already exists. Message: " + e.getMessage()),
+                HttpStatus.PRECONDITION_FAILED
         );
     }
 }

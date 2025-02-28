@@ -8,6 +8,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.EmploymentStatusReque
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmploymentStatusResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.EmploymentStatus;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.EmploymentStatusMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.employee.EmployeeRepository;
@@ -65,6 +66,11 @@ public class EmploymentStatusServiceImpl implements EmploymentStatusService {
         EmploymentStatus status = employmentStatusMapper.toEntity(employmentStatusRequestDto);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getEmploymentStatus() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Employment status for employee id " + employeeId + " already exists"
+            );
+        }
         employee.setEmploymentStatus(status);
         status.setEmployee(employee);
         employmentStatusRepository.save(status);
