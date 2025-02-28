@@ -10,6 +10,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.ContactsResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Contacts;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.OrganizationalUnit;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.ContactsMapper;
@@ -193,6 +194,11 @@ public class ContactsServiceImpl implements ContactsService {
         log.info("finding an employee by id {} for contacts", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getContacts() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Contacts are already exist for employee with id: " + employeeId
+            );
+        }
         log.info("found employee with id {} for contacts", employeeId);
         contactToChange.setEmployee(employee);
         employee.setContacts(contactToChange);
@@ -202,6 +208,11 @@ public class ContactsServiceImpl implements ContactsService {
         log.info("finding an organizational unit by id {} for contacts", organizationalUnitId);
         OrganizationalUnit organizationalUnit = organizationalUnitRepository.findById(organizationalUnitId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(organizationalUnitId)));
+        if (organizationalUnit.getContacts() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Contacts are already exist for organizational unit with id: " + organizationalUnitId
+            );
+        }
         log.info("found organizational unit with id {} for contacts", organizationalUnitId);
         contactToChange.setOrganizationalUnit(organizationalUnit);
         organizationalUnit.setContacts(contactToChange);

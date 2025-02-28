@@ -8,6 +8,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.EmploymentRecordReque
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmploymentRecordResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.EmploymentRecord;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.EmploymentRecordMapper;
@@ -66,6 +67,11 @@ public class EmploymentRecordServiceImpl implements EmploymentRecordService {
         EmploymentRecord record = employmentRecordMapper.toEntity(employmentRecordRequestDto);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getEmploymentRecord() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Employment record with employee id " + employeeId + " already exists"
+            );
+        }
         record.setEmployee(employee);
         employee.setEmploymentRecord(record);
         employmentRecordRepository.save(record);

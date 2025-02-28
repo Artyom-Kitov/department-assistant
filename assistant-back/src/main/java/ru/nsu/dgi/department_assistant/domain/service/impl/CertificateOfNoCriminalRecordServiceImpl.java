@@ -8,6 +8,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.CertificateOfNoCrimin
 import ru.nsu.dgi.department_assistant.domain.dto.employee.CertificateOfNoCriminalRecordResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.CertificateOfNoCriminalRecord;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.CertificateOfNoCriminalRecordMapper;
@@ -22,9 +23,9 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class CertificateOfNoCriminalRecordServiceImpl implements CertificateOfNoCriminalRecordService {
-    CertificateOfNoCriminalRecordRepository recordRepository;
-    CertificateOfNoCriminalRecordMapper recordMapper;
-    EmployeeRepository employeeRepository;
+    private final CertificateOfNoCriminalRecordRepository recordRepository;
+    private final CertificateOfNoCriminalRecordMapper recordMapper;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -123,6 +124,11 @@ public class CertificateOfNoCriminalRecordServiceImpl implements CertificateOfNo
         log.info("finding an employee by id {} for certificate", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getCertificateOfNoCriminalRecord() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Certificate of no criminal record is already exists for employee with id: " + employeeId
+            );
+        }
         log.info("found employee with id {} for certificate", employeeId);
         record.setEmployee(employee);
         employee.setCertificateOfNoCriminalRecord(record);

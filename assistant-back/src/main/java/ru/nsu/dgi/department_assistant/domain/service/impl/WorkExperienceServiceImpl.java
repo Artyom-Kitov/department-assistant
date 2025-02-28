@@ -7,6 +7,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.WorkExperienceRequest
 import ru.nsu.dgi.department_assistant.domain.dto.employee.WorkExperienceResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.WorkExperience;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.WorkExperienceMapper;
@@ -61,6 +62,11 @@ public class WorkExperienceServiceImpl implements WorkExperienceService {
         log.info("creating work experience by employee id {}", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getWorkExperience() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Work experience for employee id " + employeeId + " already exists"
+            );
+        }
         WorkExperience workExperience = workExperienceMapper.toEntity(workExperienceRequestDto);
         workExperience.setEmployee(employee);
         employee.setWorkExperience(workExperience);

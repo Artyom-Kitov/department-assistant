@@ -1,6 +1,7 @@
 package ru.nsu.dgi.department_assistant.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,9 @@ public class AcademicDegreeController {
             @RequestParam("employeeId") UUID employeeId,
             @RequestBody AcademicDegreeRequestDto academicDegree
     ) {
-        return ResponseEntity.ok(academicDegreeService.create(employeeId, academicDegree));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(academicDegreeService.create(employeeId, academicDegree));
     }
 
     @PutMapping("/update")

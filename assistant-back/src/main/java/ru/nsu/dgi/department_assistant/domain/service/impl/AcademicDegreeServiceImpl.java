@@ -8,6 +8,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeRequest
 import ru.nsu.dgi.department_assistant.domain.dto.employee.AcademicDegreeResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.AcademicDegree;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
+import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
 import ru.nsu.dgi.department_assistant.domain.mapper.employee.AcademicDegreeMapper;
@@ -119,6 +120,11 @@ public class AcademicDegreeServiceImpl implements AcademicDegreeService {
         log.info("finding an employee by id {} for academic degree", employeeId);
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(employeeId)));
+        if (employee.getAcademicDegree() != null) {
+            throw new EntityAlreadyExistsException(
+                    "Academic degree already exists for employee with id: " + employeeId
+            );
+        }
         log.info("found employee with id {} for academic degree", employeeId);
         academicDegree.setEmployee(employee);
         employee.setAcademicDegree(academicDegree);

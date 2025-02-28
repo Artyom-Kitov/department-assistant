@@ -1,6 +1,7 @@
 package ru.nsu.dgi.department_assistant.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,9 @@ public class CertificateOfNoCriminalRecordController {
             @RequestParam("employeeId") UUID employeeId,
             @RequestBody CertificateOfNoCriminalRecordRequestDto dto
     ) {
-        return ResponseEntity.ok(certificateService.create(employeeId, dto));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(certificateService.create(employeeId, dto));
     }
 
     @PutMapping("/update")
