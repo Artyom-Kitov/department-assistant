@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class StepStatus {
     @Id
     @Column(name = "employee_id", nullable = false)
@@ -39,11 +41,17 @@ public class StepStatus {
     @Column(name = "step_id", nullable = false)
     private int stepId;
 
+    @Column(name = "start_process_id", nullable = false)
+    private UUID startProcessId;
+
     @Column(name = "deadline")
     private LocalDate deadline;
 
     @Column(name = "completed_at")
     private LocalDate completedAt;
+
+    @Column(name = "is_successful")
+    private Boolean isSuccessful;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
@@ -53,4 +61,20 @@ public class StepStatus {
     @JoinColumn(name = "process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
     @JoinColumn(name = "step_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Step step;
+
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "start_process_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Process startProcess;
+
+    @Builder
+    public StepStatus(UUID employeeId, UUID processId, int stepId, UUID startProcessId, LocalDate deadline, LocalDate completedAt,
+                      Boolean isSuccessful) {
+        this.employeeId = employeeId;
+        this.processId = processId;
+        this.stepId = stepId;
+        this.startProcessId = startProcessId;
+        this.deadline = deadline;
+        this.completedAt = completedAt;
+        this.isSuccessful = isSuccessful;
+    }
 }

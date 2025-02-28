@@ -69,7 +69,9 @@ public class ProcessGraphDeserializer extends JsonDeserializer<List<ProcessGraph
         for (JsonNode subtaskNode : subtasksNode) {
             UUID subtaskId = UUID.randomUUID();
             String description = subtaskNode.get("description").asText();
-            int duration = subtaskNode.get("duration").asInt(1);
+            int duration = subtaskNode.get("duration") != null
+                    ? subtaskNode.get("duration").asInt(1)
+                    : 1;
             subtasks.add(new Subtask(subtaskId, description, duration));
         }
         int next = node.get("next").asInt();

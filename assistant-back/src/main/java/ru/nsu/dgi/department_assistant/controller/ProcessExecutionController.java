@@ -5,16 +5,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +25,11 @@ import java.util.UUID;
 public class ProcessExecutionController {
 
     private final ProcessExecutionService processExecutionService;
+
+    @PostMapping("/statuses")
+    public ResponseEntity<List<StepStatusDto>> getStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
+        return ResponseEntity.ok(processExecutionService.getStatuses(request));
+    }
 
     @Operation(
             summary = "Start process execution for an employee",
@@ -50,9 +57,9 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping
-    public ResponseEntity<Void> executeStep(@RequestParam UUID employeeId, @RequestBody StepExecutedDto dto) {
-        processExecutionService.executeStep(employeeId, dto);
+    @PostMapping("/common")
+    public ResponseEntity<Void> executeCommonStep(@RequestParam UUID employeeId, @RequestBody StepExecutedDto dto) {
+        processExecutionService.executeCommonStep(employeeId, dto);
         return ResponseEntity.ok().build();
     }
 }

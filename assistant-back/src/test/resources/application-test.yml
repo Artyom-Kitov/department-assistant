@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: department-assistant
+    version: 0.0.1-SNAPSHOT
+  datasource:
+    url: jdbc:postgresql://localhost:5432/department-db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

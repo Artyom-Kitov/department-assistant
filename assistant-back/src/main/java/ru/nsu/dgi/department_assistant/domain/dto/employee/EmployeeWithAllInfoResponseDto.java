@@ -1,7 +1,10 @@
 package ru.nsu.dgi.department_assistant.domain.dto.employee;
 
-public record EmployeeWithAllInfoResponseDto (
-        String id,
+import java.util.List;
+import java.util.UUID;
+
+public record EmployeeWithAllInfoResponseDto(
+        UUID id,
         String firstName,
         String lastName,
         String middleName,
@@ -12,10 +15,12 @@ public record EmployeeWithAllInfoResponseDto (
         PassportInfoResponseDto passportInfo,
         WorkExperienceResponseDto workExperience,
         CertificateOfNoCriminalRecordResponseDto certificateOfNoCriminalRecord,
+        List<EmployeeEmploymentResponseDto> employments,
         Boolean agreement,
         Boolean hasCompletedAdvancedCourses,
         Boolean needsMandatoryElection,
         String snils,
         String inn,
         Boolean isArchived
-) {}
+) {
+}
