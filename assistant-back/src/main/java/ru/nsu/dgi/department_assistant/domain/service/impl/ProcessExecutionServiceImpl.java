@@ -2,8 +2,6 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.NotImplementedException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
@@ -167,7 +165,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(employeeId.toString()));
         LocalDate startDate = deadline != null ? deadline.minusDays(graph.duration()) : null;
-        markAsStartedImpl(employee, processId, graph, graph.root(), startDate);
+        markAsStartedImpl(employee, processId, graph, graph.start(), startDate);
     }
 
     private void markAsStartedImpl(Employee employee, UUID processId, ProcessGraph graph, int nodeId, LocalDate startDate) {

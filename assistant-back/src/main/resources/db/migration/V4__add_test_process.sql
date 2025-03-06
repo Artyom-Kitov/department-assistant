@@ -3,17 +3,19 @@ BEGIN TRANSACTION;
 SET search_path = 'proc';
 
 INSERT INTO process (id, name, total_duration)
-VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 'Test subprocess', 7),
-        ('aaaaaaaa-0000-0000-0000-000000000000', 'Test process', 13);
+VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 'Test subprocess', 6),
+        ('aaaaaaaa-0000-0000-0000-000000000000', 'Test process', 12);
 
 INSERT INTO step (process_id, id, duration, meta_info, type, description)
-VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 1, 1, '{}', 3, 'P2-1 conditional'),
+VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 0, 0, '{}', 0, 'P2-0 start'),
+        ('bbbbbbbb-0000-0000-0000-000000000000', 1, 1, '{}', 3, 'P2-1 conditional'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 2, 2, '{}', 1, 'P2-2 common'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 3, 3, '{}', 1, 'P2-3 common'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 4, 1, '{}', 1, 'P2-4 common'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 5, 1, '{}', 3, 'P2-5 conditional'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 6, 0, '{}', 4, 'P2-5 final'),
         ('bbbbbbbb-0000-0000-0000-000000000000', 7, 0, '{}', 4, 'P2-6 final'),
+        ('aaaaaaaa-0000-0000-0000-000000000000', 0, 0, '{}', 0, 'P1-0 start'),
         ('aaaaaaaa-0000-0000-0000-000000000000', 1, 1, '{}', 1, 'P1-1 common'),
         ('aaaaaaaa-0000-0000-0000-000000000000', 2, 1, '{}', 3, 'P1-2 conditional'),
         ('aaaaaaaa-0000-0000-0000-000000000000', 3, 0, '{}', 4, 'P1-3 final'),
@@ -23,7 +25,8 @@ VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 1, 1, '{}', 3, 'P2-1 conditiona
         ('aaaaaaaa-0000-0000-0000-000000000000', 7, 0, '{}', 5, 'P1-7 transition');
 
 INSERT INTO common_transition (process_id, step_id, next_step_id)
-VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 2, 4),
+VALUES  ('bbbbbbbb-0000-0000-0000-000000000000', 0, 1),
+        ('bbbbbbbb-0000-0000-0000-000000000000', 2, 4),
         ('bbbbbbbb-0000-0000-0000-000000000000', 3, 4),
         ('bbbbbbbb-0000-0000-0000-000000000000', 4, 5),
         ('aaaaaaaa-0000-0000-0000-000000000000', 1, 2),

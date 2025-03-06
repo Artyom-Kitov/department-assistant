@@ -1,9 +1,9 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
@@ -38,9 +38,11 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
 
     @Override
     public ProcessTemplateCreationResponseDto createProcessTemplate(ProcessTemplateCreationRequestDto request) {
+        log.info("Creating process template with name '{}'", request.name());
         List<ProcessGraphNode> steps = request.steps();
         ProcessGraph graph = processGraphService.buildGraph(UUID.randomUUID(), request.name(), steps);
         processSavingService.saveTemplate(graph);
+        log.info("Successfully created and saved template with name '{}' by ID = {}", request.name(), graph.id());
         return new ProcessTemplateCreationResponseDto(graph.id());
     }
 
@@ -61,6 +63,7 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
         return process.getTotalDuration();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<ProcessTemplateShortDto> getAllProcesses() {
         log.info("Getting all process template IDs");
@@ -79,7 +82,6 @@ public class ProcessTemplateServiceImpl implements ProcessTemplateService {
         processRepository.deleteById(id);
     }
 
-    @Transactional
     @Override
     public void updateById(UUID id, ProcessTemplateCreationRequestDto request) {
         log.info("Updating process template with id = {}", id);

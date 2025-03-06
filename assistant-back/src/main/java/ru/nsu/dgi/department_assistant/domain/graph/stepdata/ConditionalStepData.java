@@ -1,16 +1,8 @@
 package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 
-@Getter
-@RequiredArgsConstructor
-public final class ConditionalStepData extends StepData {
-
-    private final int ifTrue;
-    private final int ifFalse;
+public record ConditionalStepData(int ifTrue, int ifFalse, int duration) implements StepData {
 
     @Override
     public List<Integer> next() {

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public enum StepType {
 
+    START(0),
     COMMON(1),
     SUBTASKS(2),
     CONDITIONAL(3),

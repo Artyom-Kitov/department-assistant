@@ -1,12 +1,11 @@
 package ru.nsu.dgi.department_assistant.domain.graph;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
-import ru.nsu.dgi.department_assistant.domain.graph.stepdata.SubtasksStepData;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -15,7 +14,7 @@ public class ProcessGraphNode {
     private final int id;
     private final int type;
     private final int duration;
-    private final String metaInfo;
+    private final JsonNode metaInfo;
     private final String description;
 
     @Setter
@@ -26,12 +25,6 @@ public class ProcessGraphNode {
     }
 
     public int getDuration() {
-        if (data instanceof SubtasksStepData d) {
-            return d.getSubtasks().stream()
-                    .max(Comparator.comparingInt(Subtask::duration))
-                    .orElseThrow()
-                    .duration();
-        }
-        return duration;
+        return data.duration();
     }
 }

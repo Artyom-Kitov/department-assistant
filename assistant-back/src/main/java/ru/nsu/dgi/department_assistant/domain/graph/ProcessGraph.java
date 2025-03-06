@@ -10,7 +10,7 @@ public record ProcessGraph(
         UUID id,
         String name,
         int duration,
-        int root,
+        int start,
         Map<Integer, ProcessGraphNode> nodes
 ) {
     public ProcessGraphNode getNode(int id) {

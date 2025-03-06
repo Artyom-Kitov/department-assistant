@@ -40,6 +40,18 @@ class ProcessCreationTest {
                   "name": "Definitely valid process",
                   "steps": [
                     {
+                      "id": 0,
+                      "metaInfo": {
+                        "x": 3,
+                        "y": 4
+                      },
+                      "type": 0,
+                      "description": "",
+                      "data": {
+                        "next": 1
+                      }
+                    },
+                    {
                       "id": 1,
                       "duration": 2,
                       "metaInfo": {},
@@ -132,8 +144,8 @@ class ProcessCreationTest {
                       "id": 0,
                       "duration": 1,
                       "metaInfo": {},
-                      "type": 1,
-                      "description": "Test common step",
+                      "type": 0,
+                      "description": "Test start",
                       "data": {
                         "next": 1
                       }
