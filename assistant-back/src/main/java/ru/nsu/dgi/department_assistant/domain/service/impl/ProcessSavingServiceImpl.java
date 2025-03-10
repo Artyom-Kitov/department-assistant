@@ -123,7 +123,7 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
     private void saveProcessTransition(Step step, ProcessTransitionStepData data) {
         Process next = processRepository.findById(data.nextProcess())
                 .orElseThrow(() -> new InvalidProcessTemplateException("no process with id " + data.nextProcess()));
-        ProcessTransition transition = new ProcessTransition(step.getProcessId(), step.getId(), next);
+        ProcessTransition transition = new ProcessTransition(step.getProcessId(), step.getId(), next.getId(), null);
         processTransitionRepository.save(transition);
     }
 

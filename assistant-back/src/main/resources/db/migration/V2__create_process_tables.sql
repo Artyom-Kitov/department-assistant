@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS employee_at_process (
     employee_id UUID    NOT NULL,
     process_id  UUID    NOT NULL,
     started_at  DATE    NOT NULL,
+    deadline    DATE,
 
     PRIMARY KEY (employee_id, process_id),
 
@@ -149,17 +150,19 @@ CREATE TABLE IF NOT EXISTS substep (
 -- TABLE step_status
 --==========================--
 CREATE TABLE IF NOT EXISTS step_status (
-    employee_id     UUID        NOT NULL,
-    process_id      UUID        NOT NULL,
-    step_id         INT         NOT NULL,
-    deadline        DATE,
-    completed_at    DATE,
+    employee_id         UUID    NOT NULL,
+    start_process_id    UUID    NOT NULL,
+    process_id          UUID    NOT NULL,
+    step_id             INT     NOT NULL,
+    deadline            DATE,
+    completed_at        DATE,
+    is_successful       BOOLEAN,
 
-    PRIMARY KEY (employee_id, process_id, step_id),
+    PRIMARY KEY (employee_id, start_process_id, process_id, step_id),
 
-    FOREIGN KEY (employee_id)
-        REFERENCES public.employee (id)
-        ON DELETE RESTRICT ON UPDATE RESTRICT,
+    FOREIGN KEY (employee_id, start_process_id)
+        REFERENCES employee_at_process (employee_id, process_id)
+        ON DELETE CASCADE ON UPDATE RESTRICT,
 
     FOREIGN KEY (process_id, step_id)
         REFERENCES step (process_id, id)
@@ -170,15 +173,16 @@ CREATE TABLE IF NOT EXISTS step_status (
 -- TABLE substep_status
 --==========================--
 CREATE TABLE IF NOT EXISTS substep_status (
-    employee_id     UUID    NOT NULL,
-    substep_id      UUID    NOT NULL,
-    is_completed    BOOLEAN NOT NULL DEFAULT false,
+    employee_id         UUID    NOT NULL,
+    start_process_id    UUID    NOT NULL,
+    substep_id          UUID    NOT NULL,
+    is_completed        BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (employee_id, substep_id),
 
-    FOREIGN KEY (employee_id)
-        REFERENCES public.employee (id)
-        ON DELETE RESTRICT ON UPDATE RESTRICT,
+    FOREIGN KEY (employee_id, start_process_id)
+        REFERENCES employee_at_process (employee_id, process_id)
+        ON DELETE CASCADE ON UPDATE RESTRICT,
 
     FOREIGN KEY (substep_id)
         REFERENCES substep (id)

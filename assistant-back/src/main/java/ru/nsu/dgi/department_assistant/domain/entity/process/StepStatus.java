@@ -34,15 +34,16 @@ public class StepStatus {
     private UUID employeeId;
 
     @Id
+    @Column(name = "start_process_id", nullable = false)
+    private UUID startProcessId;
+
+    @Id
     @Column(name = "process_id", nullable = false)
     private UUID processId;
 
     @Id
     @Column(name = "step_id", nullable = false)
     private int stepId;
-
-    @Column(name = "start_process_id", nullable = false)
-    private UUID startProcessId;
 
     @Column(name = "deadline")
     private LocalDate deadline;
@@ -54,17 +55,14 @@ public class StepStatus {
     private Boolean isSuccessful;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Employee employee;
+    @JoinColumn(name = "employee_id", referencedColumnName = "employee_id", insertable = false, updatable = false)
+    @JoinColumn(name = "start_process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
+    private EmployeeAtProcess employeeAtProcess;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
     @JoinColumn(name = "step_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Step step;
-
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "start_process_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Process startProcess;
 
     @Builder
     public StepStatus(UUID employeeId, UUID processId, int stepId, UUID startProcessId, LocalDate deadline, LocalDate completedAt,

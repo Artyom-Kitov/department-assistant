@@ -33,7 +33,10 @@ public class ProcessTransition {
     @Column(name = "step_id", nullable = false)
     private int stepId;
 
+    @Column(name = "next_process_id", nullable = false)
+    private UUID nextProcessId;
+
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "process_id", referencedColumnName = "id")
+    @JoinColumn(name = "process_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Process process;
 }

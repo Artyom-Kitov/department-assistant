@@ -4,6 +4,7 @@ import java.util.UUID;
 
 public record StepExecutedDto(
         UUID employeeId,
+        UUID startProcessId,
         UUID processId,
         int stepId
 ) {

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/execution")
+@RequestMapping("/api/v1/execute")
 @RequiredArgsConstructor
 public class ProcessExecutionController {
 

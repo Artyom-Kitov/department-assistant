@@ -9,5 +9,6 @@ import java.util.UUID;
 @Getter
 public class InvalidStepExecutionException extends RuntimeException {
     private final int stepId;
+    private final UUID startProcessId;
     private final UUID processId;
 }

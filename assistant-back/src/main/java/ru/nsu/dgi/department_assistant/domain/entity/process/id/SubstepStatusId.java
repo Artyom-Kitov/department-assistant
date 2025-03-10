@@ -14,5 +14,6 @@ import java.util.UUID;
 @EqualsAndHashCode
 public class SubstepStatusId implements Serializable {
     private UUID employeeId;
+    private UUID startProcessId;
     private UUID substepId;
 }
