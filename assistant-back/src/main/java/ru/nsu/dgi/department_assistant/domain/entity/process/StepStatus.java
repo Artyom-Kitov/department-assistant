@@ -14,7 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
+import lombok.ToString;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
 
 import java.time.LocalDate;
@@ -27,6 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 @Builder
 public class StepStatus {
     @Id

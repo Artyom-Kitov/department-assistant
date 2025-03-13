@@ -39,6 +39,7 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,25 +65,26 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     @Transactional
     @Override
     public void startForEmployee(ProcessExecutionRequestDto request) {
+        LocalDate deadline = request.deadline();
         EmployeeAtProcessId id = new EmployeeAtProcessId(request.employeeId(), request.processId());
         if (employeeAtProcessRepository.existsById(id)) {
             throw new ProcessExecutionStartException(request.employeeId(), request.processId());
         }
         employeeAtProcessRepository.save(new EmployeeAtProcess(request.employeeId(), request.processId(), null,
-                LocalDate.now(), request.deadline()));
+                LocalDate.now(), deadline));
         ProcessTemplateResponseDto process = processTemplateService.getProcessById(request.processId());
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
-        markAsStarted(request.employeeId(), request.processId(), request.processId(), graph, request.deadline());
+        markAsStarted(request.employeeId(), request.processId(), request.processId(), graph, deadline);
     }
 
     @Transactional
     @Override
-    public void executeCommonStep(UUID employeeId, StepExecutedDto dto) {
+    public void executeCommonStep(StepExecutedDto dto) {
         var employeeAtProcessId = new EmployeeAtProcessId(dto.employeeId(), dto.startProcessId());
         if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
             throw new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId());
         }
-        var stepStatusId = new StepStatusId(employeeId, dto.startProcessId(), dto.processId(), dto.stepId());
+        var stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(), dto.processId(), dto.stepId());
         StepStatus stepStatus = stepStatusRepository.findById(stepStatusId).orElseThrow(
                 () -> new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId())
         );

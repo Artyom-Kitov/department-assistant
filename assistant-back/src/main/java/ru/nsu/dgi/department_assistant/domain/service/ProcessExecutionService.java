@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface ProcessExecutionService {
     void startForEmployee(ProcessExecutionRequestDto request);
 
-    void executeCommonStep(UUID employeeId, StepExecutedDto dto);
+    void executeCommonStep(StepExecutedDto dto);
 
     List<StepStatusDto> getStatuses(ProcessExecutionStatusRequestDto request);
 }
