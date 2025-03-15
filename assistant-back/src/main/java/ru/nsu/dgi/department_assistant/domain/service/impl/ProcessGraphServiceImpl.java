@@ -59,6 +59,11 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
                 .build();
     }
 
+    @Override
+    public int calculateDurationStartingFrom(ProcessGraph graph, int stepFrom) {
+        return new ProcessDurationCalculator(processRepository).calculateDuration(stepFrom, graph.nodes());
+    }
+
     private ProcessGraphNode findStartNode(Map<Integer, ProcessGraphNode> nodes) {
         List<ProcessGraphNode> candidates = nodes.values().stream()
                 .filter(node -> node.getType() == StepType.START.getValue())
@@ -115,6 +120,4 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
             };
         }
     }
-
-
 }

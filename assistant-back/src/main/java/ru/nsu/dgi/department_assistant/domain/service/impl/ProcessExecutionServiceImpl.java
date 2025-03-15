@@ -2,6 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
@@ -9,14 +10,18 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatus
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.EmployeeAtProcess;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ExecutionHistory;
+import ru.nsu.dgi.department_assistant.domain.entity.process.Step;
 import ru.nsu.dgi.department_assistant.domain.entity.process.StepStatus;
+import ru.nsu.dgi.department_assistant.domain.entity.process.Substep;
 import ru.nsu.dgi.department_assistant.domain.entity.process.SubstepStatus;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.EmployeeAtProcessId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
+import ru.nsu.dgi.department_assistant.domain.entity.process.id.SubstepStatusId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.TransitionId;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidStepExecutionException;
@@ -33,13 +38,13 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.ExecutionHistor
 import ru.nsu.dgi.department_assistant.domain.repository.process.FinalTypeRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessTransitionRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepStatusRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepStatusRepository;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,6 +63,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     private final CommonTransitionRepository commonTransitionRepository;
     private final ConditionalTransitionRepository conditionalTransitionRepository;
     private final FinalTypeRepository finalTypeRepository;
+    private final SubstepRepository substepRepository;
     private final ProcessTransitionRepository processTransitionRepository;
 
     private final ExecutionHistoryRepository executionHistoryRepository;
@@ -74,7 +80,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 LocalDate.now(), deadline));
         ProcessTemplateResponseDto process = processTemplateService.getProcessById(request.processId());
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
-        markAsStarted(request.employeeId(), request.processId(), request.processId(), graph, deadline);
+        markAsStarted(request.employeeId(), request.processId(), request.processId(), graph.start(),
+                graph, deadline);
     }
 
     @Transactional
@@ -82,23 +89,62 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     public void executeCommonStep(StepExecutedDto dto) {
         var employeeAtProcessId = new EmployeeAtProcessId(dto.employeeId(), dto.startProcessId());
         if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
-            throw new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId());
+            throw new InvalidStepExecutionException();
         }
         var stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(), dto.processId(), dto.stepId());
         StepStatus stepStatus = stepStatusRepository.findById(stepStatusId).orElseThrow(
-                () -> new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId())
+                InvalidStepExecutionException::new
         );
         if (stepStatus.getStep().getType() != StepType.COMMON.getValue()) {
-            throw new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId());
+            throw new InvalidStepExecutionException();
         }
         if (!possibleToComplete(stepStatus)) {
-            throw new InvalidStepExecutionException(dto.stepId(), dto.startProcessId(), dto.processId());
+            throw new InvalidStepExecutionException();
         }
         LocalDate completedAt = LocalDate.now();
         stepStatus.setCompletedAt(completedAt);
         stepStatus.setIsSuccessful(true);
         stepStatusRepository.save(stepStatus);
         completeNextIfFinalOrTransition(stepStatus);
+    }
+
+    @Transactional
+    @Override
+    public void executeSubstep(SubstepExecutedDto dto) {
+        var employeeAtProcessId = new EmployeeAtProcessId(dto.employeeId(), dto.startProcessId());
+        if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
+            throw new InvalidStepExecutionException();
+        }
+        SubstepStatusId substepStatusId = new SubstepStatusId(dto.employeeId(), dto.startProcessId(), dto.substepId());
+        SubstepStatus substepStatus = substepStatusRepository.findById(substepStatusId)
+                .orElseThrow(InvalidStepExecutionException::new);
+        if (substepStatus.isCompleted()) {
+            throw new InvalidStepExecutionException();
+        }
+        substepStatus.setCompleted(true);
+        substepStatusRepository.save(substepStatus);
+        if (otherSubstepsAreCompleted(substepStatus)) {
+            Step step = substepStatus.getSubstep().getStep();
+            StepStatusId stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(),
+                    step.getProcessId(), step.getId());
+            StepStatus stepStatus = stepStatusRepository.findById(stepStatusId)
+                    .orElseThrow(InvalidStepExecutionException::new);
+            stepStatus.setCompletedAt(LocalDate.now());
+            stepStatusRepository.save(stepStatus);
+            completeNextIfFinalOrTransition(stepStatus);
+        }
+    }
+
+    private boolean otherSubstepsAreCompleted(SubstepStatus substepStatus) {
+        Step originalStep = substepStatus.getSubstep().getStep();
+        List<Substep> allSubsteps = substepRepository.findAllByStep(originalStep);
+        return allSubsteps.stream().allMatch(substep -> {
+            SubstepStatusId statusId = new SubstepStatusId(substepStatus.getEmployeeId(),
+                    substepStatus.getStartProcessId(), substep.getId());
+            SubstepStatus status = substepStatusRepository.findById(statusId)
+                    .orElseThrow(InvalidStepExecutionException::new);
+            return status.isCompleted();
+        });
     }
 
     @Override
@@ -109,6 +155,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         }
         return stepStatusRepository.findByEmployeeAndStartProcess(request.employeeId(), request.processId()).stream()
                 .map(status -> new StepStatusDto(
+                        status.getProcessId(),
                         status.getStepId(),
                         status.getStartProcessId(),
                         status.getDeadline(),
@@ -140,8 +187,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         EmployeeAtProcessId employeeAtProcessId = new EmployeeAtProcessId(stepStatus.getEmployeeId(),
                 stepStatus.getStartProcessId());
         EmployeeAtProcess employeeAtProcess = employeeAtProcessRepository.findById(employeeAtProcessId).orElseThrow(
-                () -> new InvalidStepExecutionException(stepStatus.getStepId(), stepStatus.getStartProcessId(),
-                        stepStatus.getProcessId()));
+                InvalidStepExecutionException::new);
         LocalDate startedAt = employeeAtProcess.getStartedAt();
         ExecutionHistory history = new ExecutionHistory(UUID.randomUUID(), stepStatus.getEmployeeId(),
                 stepStatus.getStartProcessId(), startedAt, completedAt, isSuccessful, null, null);
@@ -154,8 +200,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         stepStatusRepository.save(stepStatus);
         ProcessTemplateResponseDto nextProcess = processTemplateService.getProcessById(nextProcessId);
         var graph = processGraphService.buildGraph(nextProcessId, nextProcess.name(), nextProcess.steps());
-        markAsStarted(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(), nextProcessId, graph,
-                stepStatus.getEmployeeAtProcess().getDeadline());
+        markAsStarted(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(), nextProcessId, graph.start(),
+                graph, stepStatus.getEmployeeAtProcess().getDeadline());
     }
 
     private boolean possibleToComplete(StepStatus stepStatus) {
@@ -189,19 +235,21 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         return completedPrevCommons > 0 || completedPrevConditionals > 0;
     }
 
-    private void markAsStarted(UUID employeeId, UUID startProcessId, UUID processId, ProcessGraph graph, LocalDate deadline) {
+    private void markAsStarted(UUID employeeId, UUID startProcessId, UUID processId, int stepId, ProcessGraph graph,
+                               @Nullable LocalDate deadline) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException(employeeId.toString()));
-        LocalDate startDate = deadline != null ? deadline.minusDays(graph.duration()) : null;
-        markAsStartedImpl(employee, startProcessId, processId, graph, graph.start(), startDate);
+        int duration = processGraphService.calculateDurationStartingFrom(graph, stepId);
+        LocalDate startDate = deadline != null ? deadline.minusDays(duration) : null;
+        markAsStartedImpl(employee, startProcessId, processId, graph, stepId, startDate);
     }
 
     private void markAsStartedImpl(Employee employee, UUID startProcessId, UUID processId, ProcessGraph graph,
-                                   int nodeId, LocalDate startDate) {
+                                   int nodeId, @Nullable LocalDate startDate) {
         ProcessGraphNode node = graph.getNode(nodeId);
         LocalDate endDate = startDate != null ? startDate.plusDays(node.getDuration()) : null;
 
-        StepStatus stepStatus = new StepStatus(employee.getId(), processId, node.getId(), processId, endDate, null, null);
+        StepStatus stepStatus = new StepStatus(employee.getId(), processId, node.getId(), startProcessId, endDate, null, null);
         if (node.getData() instanceof StartStepData) {
             stepStatus.setCompletedAt(LocalDate.now());
         }
@@ -213,6 +261,9 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 substepStatusRepository.save(substepStatus);
             });
         }
-        node.next().forEach(nextId -> markAsStartedImpl(employee, startProcessId, processId, graph, nextId, endDate));
+        // We don't calculate deadlines if we don't know yet the way we'll actually go
+        if (node.next().size() <= 1) {
+            node.next().forEach(nextId -> markAsStartedImpl(employee, startProcessId, processId, graph, nextId, endDate));
+        }
     }
 }

@@ -13,6 +13,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionReques
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
@@ -58,6 +59,12 @@ public class ProcessExecutionController {
     @PostMapping("/common")
     public ResponseEntity<Void> executeCommonStep(@RequestBody StepExecutedDto dto) {
         processExecutionService.executeCommonStep(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/subtask")
+    public ResponseEntity<Void> executeSubtask(@RequestBody SubstepExecutedDto dto) {
+        processExecutionService.executeSubstep(dto);
         return ResponseEntity.ok().build();
     }
 }

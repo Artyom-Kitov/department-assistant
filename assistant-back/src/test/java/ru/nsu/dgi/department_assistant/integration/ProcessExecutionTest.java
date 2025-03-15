@@ -25,6 +25,7 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepStatusRepository;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -124,8 +125,16 @@ class ProcessExecutionTest {
                 .andExpect(status().isOk());
         assertEquals(0, historyRepository.count());
         List<StepStatus> statuses = stepStatusRepository.findAll();
+        statuses.sort(Comparator.comparingInt(StepStatus::getStepId));
         assertEquals(2, statuses.stream().filter(s -> s.getCompletedAt() != null).count());
-        // TODO check deadlines
+
+        StepStatus commonStatus1 = statuses.get(1);
+        StepStatus commonStatus2 = statuses.get(2);
+        StepStatus commonStatus3 = statuses.get(3);
+        assertEquals(deadline, commonStatus3.getDeadline());
+        assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration()), commonStatus2.getDeadline());
+        assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration() +
+                commonStatus2.getStep().getDuration()), commonStatus1.getDeadline());
     }
 
     private ProcessTemplateCreationResponseDto addSimpleProcess() throws Exception {
