@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ConditionalExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
@@ -15,6 +17,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
+import ru.nsu.dgi.department_assistant.domain.entity.process.ConditionalTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.EmployeeAtProcess;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ExecutionHistory;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Step;
@@ -44,6 +47,7 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepReposito
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepStatusRepository;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
+import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
@@ -58,6 +62,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
 
     private final ProcessTemplateService processTemplateService;
     private final ProcessGraphService processGraphService;
+    private final ProcessSavingService processSavingService;
 
     private final EmployeeAtProcessRepository employeeAtProcessRepository;
     private final StepStatusRepository stepStatusRepository;
@@ -85,6 +90,14 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
         markAsStarted(request.employeeId(), request.processId(), request.processId(), graph.start(),
                 graph, deadline);
+    }
+
+    @Transactional
+    @Override
+    public void cancel(ProcessCancellationDto request) {
+        EmployeeAtProcessId employeeAtProcessId = new EmployeeAtProcessId(request.employeeId(),
+                request.processId());
+        employeeAtProcessRepository.deleteById(employeeAtProcessId);
     }
 
     @Transactional
@@ -141,6 +154,34 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         }
     }
 
+    @Transactional
+    @Override
+    public void executeConditional(ConditionalExecutedDto dto) {
+        var employeeAtProcessId = new EmployeeAtProcessId(dto.employeeId(), dto.startProcessId());
+        EmployeeAtProcess employeeAtProcess = employeeAtProcessRepository.findById(employeeAtProcessId)
+                .orElseThrow(InvalidStepExecutionException::new);
+        var stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(), dto.processId(), dto.stepId());
+        StepStatus stepStatus = stepStatusRepository.findById(stepStatusId).orElseThrow(
+                InvalidStepExecutionException::new
+        );
+        if (stepStatus.getStep().getType() != StepType.CONDITIONAL.getValue()) {
+            throw new InvalidStepExecutionException();
+        }
+        checkIfPossibleToComplete(stepStatus);
+        stepStatus.setCompletedAt(LocalDate.now());
+        stepStatus.setIsSuccessful(dto.successful());
+
+        var transitionId = new TransitionId(stepStatus.getStepId(), stepStatus.getProcessId());
+        ConditionalTransition transition = conditionalTransitionRepository.findById(transitionId)
+                .orElseThrow(() -> new EntityNotFoundException(transitionId.toString()));
+
+        int nextStepId = dto.successful() ? transition.getPositiveStepId() : transition.getNegativeStepId();
+        ProcessGraph graph = processSavingService.loadTemplate(dto.processId());
+        markAsStarted(dto.employeeId(), dto.startProcessId(), dto.processId(), nextStepId, graph,
+                employeeAtProcess.getDeadline());
+        completeNextIfFinalOrTransition(stepStatus, nextStepId);
+    }
+
     private boolean otherSubstepsAreCompleted(SubstepStatus substepStatus) {
         Step originalStep = substepStatus.getSubstep().getStep();
         List<Substep> allSubsteps = substepRepository.findAllByStep(originalStep);
@@ -183,11 +224,16 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 .toList();
     }
 
+
     private void completeNextIfFinalOrTransition(StepStatus stepStatus) {
         TransitionId transitionId = new TransitionId(stepStatus.getStepId(), stepStatus.getProcessId());
         CommonTransition transition = commonTransitionRepository.findById(transitionId).orElseThrow();
+        completeNextIfFinalOrTransition(stepStatus, transition.getNextStepId());
+    }
+
+    private void completeNextIfFinalOrTransition(StepStatus stepStatus, int nextStepId) {
         StepStatusId nextStepStatusId = new StepStatusId(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(),
-                stepStatus.getProcessId(), transition.getNextStepId());
+                stepStatus.getProcessId(), nextStepId);
         StepStatus nextStepStatus = stepStatusRepository.findById(nextStepStatusId).orElseThrow();
         if (nextStepStatus.getStep().getType() == StepType.FINAL.getValue()) {
             var finalType = finalTypeRepository.findById(new TransitionId(nextStepStatus.getStepId(),
