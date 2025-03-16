@@ -5,6 +5,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatus
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
 
 import java.util.List;
 
@@ -16,4 +17,6 @@ public interface ProcessExecutionService {
     void executeSubstep(SubstepExecutedDto dto);
 
     List<StepStatusDto> getStatuses(ProcessExecutionStatusRequestDto request);
+
+    List<SubstepsInProcessStatusDto> getSubstepsStatuses(ProcessExecutionStatusRequestDto request);
 }

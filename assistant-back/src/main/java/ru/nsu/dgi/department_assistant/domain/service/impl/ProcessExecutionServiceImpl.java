@@ -11,6 +11,8 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateRespons
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.EmployeeAtProcess;
@@ -48,6 +50,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -132,6 +135,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         substepStatusRepository.save(substepStatus);
         if (otherSubstepsAreCompleted(substepStatus)) {
             stepStatus.setCompletedAt(LocalDate.now());
+            stepStatus.setIsSuccessful(true);
             stepStatusRepository.save(stepStatus);
             completeNextIfFinalOrTransition(stepStatus);
         }
@@ -157,6 +161,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         }
         return stepStatusRepository.findByEmployeeAndStartProcess(request.employeeId(), request.processId()).stream()
                 .map(status -> new StepStatusDto(
+                        status.getEmployeeId(),
                         status.getProcessId(),
                         status.getStepId(),
                         status.getStartProcessId(),
@@ -164,6 +169,17 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                         status.getCompletedAt(),
                         status.getIsSuccessful()
                 ))
+                .toList();
+    }
+
+    @Override
+    public List<SubstepsInProcessStatusDto> getSubstepsStatuses(ProcessExecutionStatusRequestDto request) {
+        return substepStatusRepository.findAllByEmployeeAndStartProcess(
+                request.employeeId(), request.processId()).stream()
+                .collect(Collectors.groupingBy(s -> s.getSubstep().getStep().getStepId())).entrySet().stream()
+                .map(entry -> new SubstepsInProcessStatusDto(entry.getKey().getProcessId(), entry.getKey().getId(),
+                        entry.getValue().stream().map(s -> new SubstepStatusDto(s.getSubstepId(),
+                                s.isCompleted())).toList()))
                 .toList();
     }
 

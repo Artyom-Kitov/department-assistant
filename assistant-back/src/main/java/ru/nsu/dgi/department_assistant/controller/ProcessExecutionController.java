@@ -14,6 +14,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatus
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
@@ -28,6 +29,11 @@ public class ProcessExecutionController {
     @PostMapping("/statuses")
     public ResponseEntity<List<StepStatusDto>> getStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
         return ResponseEntity.ok(processExecutionService.getStatuses(request));
+    }
+
+    @PostMapping("/substep/statuses")
+    public ResponseEntity<List<SubstepsInProcessStatusDto>> getSubstepStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
+        return ResponseEntity.ok(processExecutionService.getSubstepsStatuses(request));
     }
 
     @Operation(

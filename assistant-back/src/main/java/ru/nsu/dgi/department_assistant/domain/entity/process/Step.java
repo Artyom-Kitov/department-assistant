@@ -44,4 +44,8 @@ public class Step {
 
     @Column(name = "description", nullable = false)
     private String description;
+
+    public StepId getStepId() {
+        return new StepId(id, processId);
+    }
 }
