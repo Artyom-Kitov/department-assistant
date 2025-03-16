@@ -42,7 +42,7 @@ public class ProcessGraphDeserializer extends JsonDeserializer<List<ProcessGraph
                 ? jsonNode.get(DURATION_STRING).asInt(1)
                 : 1;
         JsonNode metaInfo = jsonNode.get("metaInfo");
-        String description = jsonNode.get("description").toString();
+        String description = jsonNode.get("description").asText();
 
         JsonNode dataSerialized = jsonNode.get("data");
         StepData data = switch (type) {

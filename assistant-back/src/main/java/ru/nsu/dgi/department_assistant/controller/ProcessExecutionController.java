@@ -62,8 +62,8 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/subtask")
-    public ResponseEntity<Void> executeSubtask(@RequestBody SubstepExecutedDto dto) {
+    @PostMapping("/substep")
+    public ResponseEntity<Void> executeSubstep(@RequestBody SubstepExecutedDto dto) {
         processExecutionService.executeSubstep(dto);
         return ResponseEntity.ok().build();
     }

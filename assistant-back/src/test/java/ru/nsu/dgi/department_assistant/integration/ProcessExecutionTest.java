@@ -19,10 +19,14 @@ import ru.nsu.dgi.department_assistant.domain.entity.process.ExecutionHistory;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Process;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Step;
 import ru.nsu.dgi.department_assistant.domain.entity.process.StepStatus;
+import ru.nsu.dgi.department_assistant.domain.entity.process.SubstepStatus;
+import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ExecutionHistoryRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepStatusRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepStatusRepository;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -30,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +60,10 @@ class ProcessExecutionTest {
     private StepRepository stepRepository;
     @Autowired
     private ExecutionHistoryRepository historyRepository;
+    @Autowired
+    private SubstepRepository substepRepository;
+    @Autowired
+    private SubstepStatusRepository substepStatusRepository;
 
     private static final String START_EXECUTION_JSON_FORMAT = """
                 {
@@ -77,6 +86,14 @@ class ProcessExecutionTest {
               "startProcessId": "%s",
               "processId": "%s",
               "stepId": %d
+            }
+            """;
+
+    private static final String SUBSTEP_EXECUTION_JSON_FORMAT = """
+            {
+              "employeeId": "%s",
+              "startProcessId": "%s",
+              "substepId": "%s"
             }
             """;
 
@@ -135,6 +152,51 @@ class ProcessExecutionTest {
         assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration()), commonStatus2.getDeadline());
         assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration() +
                 commonStatus2.getStep().getDuration()), commonStatus1.getDeadline());
+    }
+
+    @Test
+    void executeSubsteps() throws Exception {
+        UUID id = addSubstepsProcess().id();
+        UUID employeeId = addTestEmployee().id();
+
+        String json = START_EXECUTION_JSON_FORMAT.formatted(employeeId.toString(), id.toString());
+        mockMvc.perform(withJsonBody(json, BASE_URL + "/start"))
+                .andExpect(status().isOk());
+        List<SubstepStatus> statuses = substepStatusRepository.findAll();
+        assertEquals(2, statuses.size());
+        assertTrue(statuses.stream().noneMatch(SubstepStatus::isCompleted));
+        SubstepStatus substepStatus1 = statuses.stream().filter(s -> s.getSubstep().getDescription().endsWith("1"))
+                .findAny().orElseThrow();
+
+        json = COMMON_STEP_EXECUTION_JSON_FORMAT.formatted(employeeId, id, id, 1);
+        mockMvc.perform(withJsonBody(json, BASE_URL + "/common"))
+                .andExpect(status().isOk());
+
+        json = SUBSTEP_EXECUTION_JSON_FORMAT.formatted(employeeId, id, substepStatus1.getSubstep().getId());
+        mockMvc.perform(withJsonBody(json, BASE_URL + "/substep"))
+                .andExpect(status().isOk());
+        statuses = substepStatusRepository.findAll();
+        substepStatus1 = statuses.stream().filter(s -> s.getSubstep().getDescription().endsWith("1"))
+                .findAny().orElseThrow();
+        SubstepStatus substepStatus2 = statuses.stream().filter(s -> s.getSubstep().getDescription().endsWith("2"))
+                .findAny().orElseThrow();
+        assertTrue(substepStatus1.isCompleted());
+        assertFalse(substepStatus2.isCompleted());
+        assertNull(stepStatusRepository.findById(new StepStatusId(employeeId, id, id, 2)).orElseThrow()
+                .getCompletedAt());
+
+        json = SUBSTEP_EXECUTION_JSON_FORMAT.formatted(employeeId, id, substepStatus2.getSubstep().getId());
+        mockMvc.perform(withJsonBody(json, BASE_URL + "/substep"))
+                .andExpect(status().isOk());
+        statuses = substepStatusRepository.findAll();
+        substepStatus1 = statuses.stream().filter(s -> s.getSubstep().getDescription().endsWith("1"))
+                .findAny().orElseThrow();
+        substepStatus2 = statuses.stream().filter(s -> s.getSubstep().getDescription().endsWith("2"))
+                .findAny().orElseThrow();
+        assertTrue(substepStatus1.isCompleted());
+        assertTrue(substepStatus2.isCompleted());
+        assertEquals(LocalDate.now(), stepStatusRepository.findById(new StepStatusId(employeeId, id, id, 2))
+                .orElseThrow().getCompletedAt());
     }
 
     private ProcessTemplateCreationResponseDto addSimpleProcess() throws Exception {
@@ -220,6 +282,79 @@ class ProcessExecutionTest {
                       "metaInfo": {},
                       "type": 1,
                       "description": "Third step",
+                      "data": {
+                        "next": 4
+                      }
+                    },
+                    {
+                      "id": 4,
+                      "metaInfo": {},
+                      "type": 4,
+                      "description": "Success",
+                      "data": {
+                        "isSuccessful": true
+                      }
+                    }
+                  ]
+                }
+                """;
+        return GSON.fromJson(mockMvc.perform(withJsonBody(json, "/api/v1/templates"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString(),
+                ProcessTemplateCreationResponseDto.class);
+    }
+
+    private ProcessTemplateCreationResponseDto addSubstepsProcess() throws Exception {
+        String json = """
+                {
+                  "name": "Subtasks",
+                  "steps": [
+                    {
+                      "id": 0,
+                      "metaInfo": {},
+                      "type": 0,
+                      "description": "start",
+                      "data": {
+                        "next": 1
+                      }
+                    },
+                    {
+                      "id": 1,
+                      "metaInfo": {},
+                      "type": 1,
+                      "duration": 2,
+                      "description": "First step",
+                      "data": {
+                        "next": 2
+                      }
+                    },
+                    {
+                      "id": 2,
+                      "metaInfo": {},
+                      "type": 2,
+                      "description": "Substeps",
+                      "data": {
+                        "subtasks": [
+                          {
+                            "description": "substep 1",
+                            "duration": 3
+                          },
+                          {
+                            "description": "substep 2",
+                            "duration": 4
+                          }
+                        ],
+                        "next": 3
+                      }
+                    },
+                    {
+                      "id": 3,
+                      "metaInfo": {},
+                      "type": 1,
+                      "duration": 2,
+                      "description": "Some step",
                       "data": {
                         "next": 4
                       }

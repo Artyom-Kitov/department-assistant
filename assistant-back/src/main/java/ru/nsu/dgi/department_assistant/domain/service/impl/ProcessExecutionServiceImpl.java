@@ -98,9 +98,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         if (stepStatus.getStep().getType() != StepType.COMMON.getValue()) {
             throw new InvalidStepExecutionException();
         }
-        if (!possibleToComplete(stepStatus)) {
-            throw new InvalidStepExecutionException();
-        }
+        checkIfPossibleToComplete(stepStatus);
+
         LocalDate completedAt = LocalDate.now();
         stepStatus.setCompletedAt(completedAt);
         stepStatus.setIsSuccessful(true);
@@ -115,20 +114,23 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
             throw new InvalidStepExecutionException();
         }
+
         SubstepStatusId substepStatusId = new SubstepStatusId(dto.employeeId(), dto.startProcessId(), dto.substepId());
         SubstepStatus substepStatus = substepStatusRepository.findById(substepStatusId)
                 .orElseThrow(InvalidStepExecutionException::new);
         if (substepStatus.isCompleted()) {
             throw new InvalidStepExecutionException();
         }
+        Step step = substepStatus.getSubstep().getStep();
+        StepStatusId stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(),
+                step.getProcessId(), step.getId());
+        StepStatus stepStatus = stepStatusRepository.findById(stepStatusId)
+                .orElseThrow(InvalidStepExecutionException::new);
+        checkIfPossibleToComplete(stepStatus);
+
         substepStatus.setCompleted(true);
         substepStatusRepository.save(substepStatus);
         if (otherSubstepsAreCompleted(substepStatus)) {
-            Step step = substepStatus.getSubstep().getStep();
-            StepStatusId stepStatusId = new StepStatusId(dto.employeeId(), dto.startProcessId(),
-                    step.getProcessId(), step.getId());
-            StepStatus stepStatus = stepStatusRepository.findById(stepStatusId)
-                    .orElseThrow(InvalidStepExecutionException::new);
             stepStatus.setCompletedAt(LocalDate.now());
             stepStatusRepository.save(stepStatus);
             completeNextIfFinalOrTransition(stepStatus);
@@ -204,9 +206,9 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 graph, stepStatus.getEmployeeAtProcess().getDeadline());
     }
 
-    private boolean possibleToComplete(StepStatus stepStatus) {
+    private void checkIfPossibleToComplete(StepStatus stepStatus) {
         if (stepStatus.getCompletedAt() != null) {
-            return false;
+            throw new InvalidStepExecutionException();
         }
         long completedPrevCommons = commonTransitionRepository.findByNextInProcess(stepStatus.getProcessId(),
                 stepStatus.getStepId()).stream()
@@ -232,7 +234,9 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 .filter(status -> status.getCompletedAt() != null)
                 .count();
 
-        return completedPrevCommons > 0 || completedPrevConditionals > 0;
+        if (completedPrevCommons == 0 && completedPrevConditionals == 0) {
+            throw new InvalidStepExecutionException();
+        }
     }
 
     private void markAsStarted(UUID employeeId, UUID startProcessId, UUID processId, int stepId, ProcessGraph graph,
