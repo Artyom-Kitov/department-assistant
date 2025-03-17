@@ -5,22 +5,25 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ConditionalExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/execution")
+@RequestMapping("/api/v1/execute")
 @RequiredArgsConstructor
 public class ProcessExecutionController {
 
@@ -29,6 +32,11 @@ public class ProcessExecutionController {
     @PostMapping("/statuses")
     public ResponseEntity<List<StepStatusDto>> getStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
         return ResponseEntity.ok(processExecutionService.getStatuses(request));
+    }
+
+    @PostMapping("/substep/statuses")
+    public ResponseEntity<List<SubstepsInProcessStatusDto>> getSubstepStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
+        return ResponseEntity.ok(processExecutionService.getSubstepsStatuses(request));
     }
 
     @Operation(
@@ -57,9 +65,27 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping("/cancel")
+    public ResponseEntity<Void> cancelExecution(@RequestBody ProcessCancellationDto request) {
+        processExecutionService.cancel(request);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/common")
-    public ResponseEntity<Void> executeCommonStep(@RequestParam UUID employeeId, @RequestBody StepExecutedDto dto) {
-        processExecutionService.executeCommonStep(employeeId, dto);
+    public ResponseEntity<Void> executeCommonStep(@RequestBody StepExecutedDto dto) {
+        processExecutionService.executeCommonStep(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/substep")
+    public ResponseEntity<Void> executeSubstep(@RequestBody SubstepExecutedDto dto) {
+        processExecutionService.executeSubstep(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/conditional")
+    public ResponseEntity<Void> executeConditional(@RequestBody ConditionalExecutedDto dto) {
+        processExecutionService.executeConditional(dto);
         return ResponseEntity.ok().build();
     }
 }

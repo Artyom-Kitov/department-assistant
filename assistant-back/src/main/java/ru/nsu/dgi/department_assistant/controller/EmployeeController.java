@@ -3,6 +3,7 @@ package ru.nsu.dgi.department_assistant.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/employees")
 @RequiredArgsConstructor
+@Tag(
+        name = "Employees",
+        description = "Provides basic operations for creating, updating, deleting and retrieving employee information."
+)
 public class EmployeeController {
     private final EmployeeService employeeService;
 
@@ -133,8 +138,8 @@ public class EmployeeController {
     @ApiResponses(
             value = {
                     @ApiResponse(
-                            responseCode = "201",
-                            description = "Successfully created"
+                            responseCode = "200",
+                            description = "Successfully updated"
                     ),
                     @ApiResponse(
                             responseCode = "404",

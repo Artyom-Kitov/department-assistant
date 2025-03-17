@@ -13,7 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.SubstepStatusId;
 
 import java.util.UUID;
@@ -31,6 +30,10 @@ public class SubstepStatus {
     private UUID employeeId;
 
     @Id
+    @Column(name = "start_process_id", nullable = false)
+    private UUID startProcessId;
+
+    @Id
     @Column(name = "substep_id", nullable = false)
     private UUID substepId;
 
@@ -38,10 +41,11 @@ public class SubstepStatus {
     private boolean isCompleted;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id")
-    private Employee employee;
+    @JoinColumn(name = "employee_id", referencedColumnName = "employee_id", insertable = false, updatable = false)
+    @JoinColumn(name = "start_process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
+    private EmployeeAtProcess employeeAtProcess;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "substep_id", referencedColumnName = "id")
+    @JoinColumn(name = "substep_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Substep substep;
 }

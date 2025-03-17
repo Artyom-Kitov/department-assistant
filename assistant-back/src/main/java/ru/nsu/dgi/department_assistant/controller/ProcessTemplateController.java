@@ -39,13 +39,28 @@ public class ProcessTemplateController {
     @Operation(
             summary = "Create new process template",
             description = """
-                    Note that the process shouldn't have loops and
-                    must contain at least one final step where isSuccessful == true.
+                    Note the following:
+                    - The process shouldn't have loops.
+                    - The process must contain at least one final step where isSuccessful == true.
+                    - The process must contain exactly one one step with type = 0 (start).
                     
                     The process itself is represented as list of steps with IDs. Step ID must be unique in the process.
                     The "data" field depends on the "type" value.
                     
                     Supported steps:
+                    
+                    **Start step**
+                    ```
+                    {
+                        "id": 0,
+                        "metaInfo": {},
+                        "type": 0,
+                        "description": "",
+                        "data": {
+                            "next": 1
+                        }
+                    }
+                    ```
                     
                     **Basic step**
                     ```

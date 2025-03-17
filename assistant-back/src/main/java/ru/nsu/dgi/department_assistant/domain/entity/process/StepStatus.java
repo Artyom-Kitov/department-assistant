@@ -14,7 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
+import lombok.ToString;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
 
 import java.time.LocalDate;
@@ -27,11 +27,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 @Builder
 public class StepStatus {
     @Id
     @Column(name = "employee_id", nullable = false)
     private UUID employeeId;
+
+    @Id
+    @Column(name = "start_process_id", nullable = false)
+    private UUID startProcessId;
 
     @Id
     @Column(name = "process_id", nullable = false)
@@ -40,9 +45,6 @@ public class StepStatus {
     @Id
     @Column(name = "step_id", nullable = false)
     private int stepId;
-
-    @Column(name = "start_process_id", nullable = false)
-    private UUID startProcessId;
 
     @Column(name = "deadline")
     private LocalDate deadline;
@@ -54,17 +56,14 @@ public class StepStatus {
     private Boolean isSuccessful;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Employee employee;
+    @JoinColumn(name = "employee_id", referencedColumnName = "employee_id", insertable = false, updatable = false)
+    @JoinColumn(name = "start_process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
+    private EmployeeAtProcess employeeAtProcess;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
     @JoinColumn(name = "step_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Step step;
-
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinColumn(name = "start_process_id", referencedColumnName = "id", insertable = false, updatable = false)
-    private Process startProcess;
 
     @Builder
     public StepStatus(UUID employeeId, UUID processId, int stepId, UUID startProcessId, LocalDate deadline, LocalDate completedAt,

@@ -16,6 +16,7 @@ import java.util.UUID;
 @EqualsAndHashCode
 public class StepStatusId implements Serializable {
     private UUID employeeId;
+    private UUID startProcessId;
     private UUID processId;
     private int stepId;
 }

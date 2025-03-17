@@ -10,4 +10,6 @@ public interface ProcessGraphService {
     ProcessGraph buildGraph(UUID id, String name, List<ProcessGraphNode> nodes);
 
     ProcessGraph buildGraph(String name, List<ProcessGraphNode> nodes, int duration);
+
+    int calculateDurationStartingFrom(ProcessGraph graph, int stepFrom);
 }

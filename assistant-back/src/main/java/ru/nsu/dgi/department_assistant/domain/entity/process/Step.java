@@ -1,13 +1,10 @@
 package ru.nsu.dgi.department_assistant.domain.entity.process;
 
-import jakarta.persistence.CascadeType;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -40,11 +37,15 @@ public class Step {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "meta_info", columnDefinition = "json")
-    private String metaInfo;
+    private JsonNode metaInfo;
 
     @Column(name = "type", nullable = false)
     private int type;
 
     @Column(name = "description", nullable = false)
     private String description;
+
+    public StepId getStepId() {
+        return new StepId(id, processId);
+    }
 }
