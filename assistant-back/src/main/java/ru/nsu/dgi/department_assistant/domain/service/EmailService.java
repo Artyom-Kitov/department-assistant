@@ -14,8 +14,8 @@ public interface EmailService {
 
     EmailTemplateDto getTemplateById(Integer id);
     //как-то добавлять новые шаблоны
-    void updateTemplate(EmailTemplateDto emailTemplateDto);
-    List<MimeMessage> buildEmail(EmailTemplateDto emailTemplateDto, List<ContactsResponseDto> contactsResponseDtoList, List<MultipartFile> files); // пока думаем
+    EmailTemplateDto updateTemplate(EmailTemplateDto emailTemplateDto);
+    List<MimeMessage> buildEmails(EmailTemplateDto emailTemplateDto, List<ContactsResponseDto> contactsResponseDtoList, List<MultipartFile> files); // пока думаем
     // там внутри уже будут мапы из документ сервайса надеюсь это не убого
     void sendEmails(List<MimeMessage> emails);
     void deleteTemplate(Integer id);

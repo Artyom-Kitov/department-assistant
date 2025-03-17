@@ -1,5 +1,6 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -8,24 +9,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.nsu.dgi.department_assistant.domain.dto.document.DocumentTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.document.DocumentTemplate;
+import ru.nsu.dgi.department_assistant.domain.mapper.document.DocumentTemplateMapper;
+import ru.nsu.dgi.department_assistant.domain.mapper.employee.AcademicDegreeMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.document.DocumentTemplateRepository;
-import ru.nsu.dgi.department_assistant.domain.service.DocumentTemplateService;
+import ru.nsu.dgi.department_assistant.domain.service.DocumentService;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 
-public class DocumentTemplateServiceImpl implements DocumentTemplateService {
+public class DocumentServiceImpl implements DocumentService {
     private final DocumentTemplateRepository documentTemplateRepository;
-    // Конвертация XWPFDocument → byte[]
+    private final DocumentTemplateMapper documentTemplateMapper;
+
     @Override
     public byte[] convertToBytes(XWPFDocument document) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -36,7 +45,6 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
         }
     }
 
-    // Конвертация byte[] → XWPFDocument
     @Override
     public XWPFDocument convertToDocument(byte[] data) {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
@@ -58,12 +66,21 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
     }
 
     @Override
-    public void saveTemplateFromOutside(MultipartFile file) {
-
+    public DocumentTemplateDto saveTemplate(String title, MultipartFile file) {
+        try {
+            byte[] fileBytes = file.getBytes();
+            DocumentTemplateDto templateDTO = new DocumentTemplateDto(null, title, fileBytes);
+            DocumentTemplate template = documentTemplateMapper.toEntity(templateDTO);
+            template = documentTemplateRepository.save(template);
+            return documentTemplateMapper.toDTO(template);
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка при обработке файла", e);
+        }
     }
 
     @Override
-    public XWPFDocument fillTemplate(DocumentTemplate template, Map<String, String> data) {
+    public XWPFDocument fillTemplate(DocumentTemplateDto documentTemplate, Map<String, String> data) {
+        DocumentTemplate template = documentTemplateMapper.toEntity(documentTemplate);
         XWPFDocument document = convertToDocument(template.getTemplateData());
 
         for (XWPFParagraph paragraph : document.getParagraphs()) {
@@ -81,25 +98,32 @@ public class DocumentTemplateServiceImpl implements DocumentTemplateService {
     }
 
     @Override
-    public Map<String, String> buildMapForPerson(EmployeeResponseDto employeeResponseDto) {
-        return null;
+    public Map<String, String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee) {
+        Map<String, String> dataMap = new HashMap<>();
+
+        Date current = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-mm-YYYY");
+        String date = formatter.format(current);
+        dataMap.put("date", date);
+
+        for (Field field : EmployeeWithAllInfoResponseDto.class.getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                Object value = field.get(employee);
+                dataMap.put(field.getName(), value != null ? value.toString() : "");
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Ошибка при обработке поля: " + field.getName(), e);
+            }
+        }
+
+        return dataMap;
     }
-    // add map generating function or add it in bd
     // add padegi
 
-    @Override
-    public Path saveGeneratedDocument(XWPFDocument document, String fileName) {
-        Path filePath = Paths.get("/generated-docs/", fileName + ".docx"); //change path afterwards!!!
 
-        try (FileOutputStream out = new FileOutputStream(filePath.toFile())) {
-            document.write(out);
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка при сохранении документа", e);
-        }
-        return filePath;
-    }
 
     @Override
+    @Transactional
     public void deleteTemplate(Integer id) {
         if (!documentTemplateRepository.existsById(id)) {
             throw new RuntimeException("Шаблон не найден");
