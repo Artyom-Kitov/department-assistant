@@ -21,7 +21,7 @@ import lombok.Setter;
     private String title;
     @Lob
     @Column(nullable = false)
-    private byte[] templateData;
+    private String templatePath;
 
 
 

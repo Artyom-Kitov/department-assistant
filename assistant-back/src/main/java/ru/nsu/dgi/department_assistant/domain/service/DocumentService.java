@@ -9,16 +9,16 @@ import ru.nsu.dgi.department_assistant.domain.entity.document.DocumentTemplate;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 
 public interface DocumentService {
 
     byte[] convertToBytes(XWPFDocument document);
-    XWPFDocument convertToDocument(byte[] data);
+//    XWPFDocument convertToDocument(byte[] data);
     DocumentTemplateDto getTemplateById(Integer id);
     DocumentTemplateDto updateTemplate(Integer id, DocumentTemplateDto documentTemplateDto);
     DocumentTemplateDto saveTemplate(String title,MultipartFile file);
-    XWPFDocument fillTemplate(DocumentTemplateDto template, Map<String, String> data);
-    Map<String,String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee);
+    XWPFDocument fillTemplate(Integer templateId, UUID employeeId);
     void deleteTemplate(Integer id);
 
 }

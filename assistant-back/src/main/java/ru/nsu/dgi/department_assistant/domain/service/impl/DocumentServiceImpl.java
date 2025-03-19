@@ -1,5 +1,9 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import com.github.petrovich4j.Case;
+import com.github.petrovich4j.Gender;
+import com.github.petrovich4j.NameType;
+import com.github.petrovich4j.Petrovich;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -16,10 +20,7 @@ import ru.nsu.dgi.department_assistant.domain.mapper.employee.AcademicDegreeMapp
 import ru.nsu.dgi.department_assistant.domain.repository.document.DocumentTemplateRepository;
 import ru.nsu.dgi.department_assistant.domain.service.DocumentService;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,9 @@ import java.util.Map;
 public class DocumentServiceImpl implements DocumentService {
     private final DocumentTemplateRepository documentTemplateRepository;
     private final DocumentTemplateMapper documentTemplateMapper;
+    private final DeclensionServiceImpl declensionService;
+    private final MapBuildeerServiceImpl mapBuildeerService;
+    private final EmployeeServiceImpl employeeService;
 
     @Override
     public byte[] convertToBytes(XWPFDocument document) {
@@ -44,20 +51,20 @@ public class DocumentServiceImpl implements DocumentService {
             throw new RuntimeException("Ошибка при сохранении шаблона документа", e);
         }
     }
-
-    @Override
-    public XWPFDocument convertToDocument(byte[] data) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
-            return new XWPFDocument(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка при загрузке шаблона документа", e);
-        }
-    }
+//
+//    @Override
+//    public XWPFDocument convertToDocument(byte[] data) {
+//        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+//            return new XWPFDocument(inputStream);
+//        } catch (IOException e) {
+//            throw new RuntimeException("Ошибка при загрузке шаблона документа", e);
+//        }
+//    }
 
     @Override
     public DocumentTemplateDto getTemplateById(Integer id) {
         DocumentTemplate template = documentTemplateRepository.findById(id).orElseThrow();
-        return new DocumentTemplateDto(template.getId(), template.getTitle(), template.getTemplateData());
+        return new DocumentTemplateDto(template.getId(), template.getTitle(), template.getTemplatePath());
     }
 
     @Override
@@ -68,28 +75,63 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public DocumentTemplateDto saveTemplate(String title, MultipartFile file) {
         try {
-            byte[] fileBytes = file.getBytes();
-            DocumentTemplateDto templateDTO = new DocumentTemplateDto(null, title, fileBytes);
+            // Указываем путь к папке с шаблонами
+            String uploadDir = "путь/к/папке/с/шаблонами"; // Укажи путь к папке
+            File dir = new File(uploadDir);
+
+            // Создаем папку, если её нет
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // Сохраняем файл на сервер
+            String fileName = file.getOriginalFilename();
+            String filePath = uploadDir + File.separator + fileName;
+
+            File dest = new File(filePath);
+            file.transferTo(dest); // Сохраняем файл
+
+            // Создаем DTO с путем к файлу
+            DocumentTemplateDto templateDTO = new DocumentTemplateDto(null, title, filePath);
+
+            // Сохраняем в базу данных
             DocumentTemplate template = documentTemplateMapper.toEntity(templateDTO);
             template = documentTemplateRepository.save(template);
-            return documentTemplateMapper.toDTO(template);
+
+            return documentTemplateMapper.toDto(template);
         } catch (IOException e) {
             throw new RuntimeException("Ошибка при обработке файла", e);
         }
     }
 
     @Override
-    public XWPFDocument fillTemplate(DocumentTemplateDto documentTemplate, Map<String, String> data) {
-        DocumentTemplate template = documentTemplateMapper.toEntity(documentTemplate);
-        XWPFDocument document = convertToDocument(template.getTemplateData());
+    public XWPFDocument fillTemplate(Integer templateId, UUID employeeId) {
+        // Получаем шаблон по ID
+        DocumentTemplateDto template = getTemplateById(templateId);
 
+        // Получаем данные сотрудника
+        EmployeeWithAllInfoResponseDto employee = employeeService.getEmployeeWithAllInfos(employeeId);
+
+        // Строим мапу данных
+        Map<String, String> data = mapBuildeerService.buildMapForPerson(employee);
+
+        // Путь к файлу шаблона
+        String templatePath = template.templatePath();
+
+        // Чтение шаблона из файла
+        XWPFDocument document;
+        try (FileInputStream fis = new FileInputStream(templatePath)) {
+            document = new XWPFDocument(fis);
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка при чтении шаблона", e);
+        }
+
+        // Замена данных в шаблоне с учетом падежей
         for (XWPFParagraph paragraph : document.getParagraphs()) {
             for (XWPFRun run : paragraph.getRuns()) {
                 String text = run.getText(0);
                 if (text != null) {
-                    for (Map.Entry<String, String> entry : data.entrySet()) {
-                        text = text.replace("{{" + entry.getKey() + "}}", entry.getValue());
-                    }
+                    text = replaceWithCases(text, data);
                     run.setText(text, 0);
                 }
             }
@@ -97,28 +139,29 @@ public class DocumentServiceImpl implements DocumentService {
         return document;
     }
 
-    @Override
-    public Map<String, String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee) {
-        Map<String, String> dataMap = new HashMap<>();
+    private String replaceWithCases(String text, Map<String, String> data) {
+        // Регулярное выражение для поиска шаблонов с падежами
+        Pattern pattern = Pattern.compile("\\{\\{(.*?)/(.*?)\\}\\}");
+        Matcher matcher = pattern.matcher(text);
 
-        Date current = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-mm-YYYY");
-        String date = formatter.format(current);
-        dataMap.put("date", date);
+        // Обрабатываем все совпадения
+        while (matcher.find()) {
+            String key = matcher.group(1); // Ключ (например, "lastName", "fullname")
+            String caseType = matcher.group(2); // Падеж (например, "i")
+            String value = data.get(key); // Значение из data
 
-        for (Field field : EmployeeWithAllInfoResponseDto.class.getDeclaredFields()) {
-            field.setAccessible(true);
-            try {
-                Object value = field.get(employee);
-                dataMap.put(field.getName(), value != null ? value.toString() : "");
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Ошибка при обработке поля: " + field.getName(), e);
+            if (value != null) {
+                // Склоняем значение по падежу
+                String declinedValue = declensionService.declineName(key, value, caseType);
+                text = text.replace(matcher.group(0), declinedValue); // Заменяем шаблон
             }
         }
 
-        return dataMap;
+        return text;
     }
-    // add padegi
+
+
+
 
 
 
@@ -132,5 +175,5 @@ public class DocumentServiceImpl implements DocumentService {
     }
 }
 
-// add exceptions
+
 

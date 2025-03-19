@@ -4,5 +4,5 @@ import org.apache.poi.xwpf.usermodel.*;
 public record DocumentTemplateDto(
         Integer id,
         String title,
-        byte[] templateData)
+        String templatePath)
 {}
