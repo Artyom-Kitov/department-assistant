@@ -13,12 +13,12 @@ import java.util.UUID;
 
 public interface DocumentService {
 
-    byte[] convertToBytes(XWPFDocument document);
+    byte[] fillAndConvertTemplate(UUID templateId, UUID employeeId);
 //    XWPFDocument convertToDocument(byte[] data);
-    DocumentTemplateDto getTemplateById(Integer id);
-    DocumentTemplateDto updateTemplate(Integer id, DocumentTemplateDto documentTemplateDto);
-    DocumentTemplateDto saveTemplate(String title,MultipartFile file);
-    XWPFDocument fillTemplate(Integer templateId, UUID employeeId);
-    void deleteTemplate(Integer id);
+//    DocumentTemplateDto getTemplateById(Integer id);
+//    DocumentTemplateDto updateTemplate(Integer id, DocumentTemplateDto documentTemplateDto);
+//    DocumentTemplateDto saveTemplate(String title,MultipartFile file);
+//    XWPFDocument fillTemplate(UUID templateId, UUID employeeId);
+//    void deleteTemplate(Integer id);
 
 }
