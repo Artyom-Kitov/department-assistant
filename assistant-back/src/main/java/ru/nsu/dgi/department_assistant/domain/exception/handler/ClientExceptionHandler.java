@@ -1,5 +1,6 @@
 package ru.nsu.dgi.department_assistant.domain.exception.handler;
 
+import jakarta.persistence.NonUniqueResultException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,19 +33,31 @@ public class ClientExceptionHandler {
 
     @ExceptionHandler(NullPropertyException.class)
     public ResponseEntity<InvalidRequestDto> handleNullPropertyException(NullPropertyException e) {
-        log.error("Null property exception handled:", e);
-        return new ResponseEntity<>(new InvalidRequestDto(
-                "Expected non-null property/properties but got null. Message: " + e.getMessage()),
+        log.error(e.getClass().getSimpleName() + ": ", e);
+        return new ResponseEntity<>(
+                new InvalidRequestDto("Expected non-null property/properties but got null. Message: " + e.getMessage()),
                 HttpStatus.BAD_REQUEST
         );
     }
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
     public ResponseEntity<InvalidRequestDto> handleEntityAlreadyExistsException(EntityAlreadyExistsException e) {
-        log.error("Entity already exists exception handled:", e);
+        log.error(e.getClass().getSimpleName() + ": ", e);
         return new ResponseEntity<>(
-                new InvalidRequestDto("Entity you're trying to create is already exists. Message: " + e.getMessage()),
+                new InvalidRequestDto("Entity you're trying to create already exists. Message: " + e.getMessage()),
                 HttpStatus.PRECONDITION_FAILED
+        );
+    }
+
+    @ExceptionHandler(NonUniqueResultException.class)
+    public ResponseEntity<InvalidRequestDto> handleNonUniqueResultException(NonUniqueResultException e) {
+        log.error(e.getClass().getSimpleName() + ": ", e);
+        return new ResponseEntity<>(
+                new InvalidRequestDto(
+                        "Your request violates unique constraints of an entity you're trying to change. Message: " +
+                        e.getMessage()
+                ),
+                HttpStatus.BAD_REQUEST
         );
     }
 }
