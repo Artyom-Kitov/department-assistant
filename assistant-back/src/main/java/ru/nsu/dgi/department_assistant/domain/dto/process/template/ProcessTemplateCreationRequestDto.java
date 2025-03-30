@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.dto.process;
+package ru.nsu.dgi.department_assistant.domain.dto.process.template;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;

@@ -44,4 +44,15 @@ public class EmployeeAtProcess {
 
     @Column(name = "deadline")
     private LocalDate deadline;
+
+    @Column(name = "step_process_id")
+    private UUID currentStepProcessId;
+
+    @Column(name = "step_id")
+    private int currentStepId;
+
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "step_process_id", referencedColumnName = "process_id", insertable = false, updatable = false)
+    @JoinColumn(name = "step_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Step currentStep;
 }

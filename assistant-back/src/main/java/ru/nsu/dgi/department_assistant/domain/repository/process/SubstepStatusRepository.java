@@ -5,13 +5,13 @@ import org.springframework.data.jpa.repository.Query;
 import ru.nsu.dgi.department_assistant.domain.entity.process.SubstepStatus;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.SubstepStatusId;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface SubstepStatusRepository extends JpaRepository<SubstepStatus, SubstepStatusId> {
     @Query(value = """
             SELECT ss FROM SubstepStatus ss
-            WHERE ss.employeeId = ?1 AND ss.startProcessId = ?2
+            WHERE ss.employeeId = ?1 AND ss.startProcessId = ?2 AND ss.substepId = ?3
             """)
-    List<SubstepStatus> findAllByEmployeeAndStartProcess(UUID employeeId, UUID startProcessId);
+    Optional<SubstepStatus> findAllByEmployeeStartProcessAndId(UUID employeeId, UUID startProcessId, UUID substepId);
 }

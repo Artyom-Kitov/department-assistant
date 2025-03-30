@@ -1,9 +1,9 @@
 package ru.nsu.dgi.department_assistant.domain.service;
 
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateShortDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateCreationRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateCreationResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 
 import java.util.List;
 import java.util.UUID;

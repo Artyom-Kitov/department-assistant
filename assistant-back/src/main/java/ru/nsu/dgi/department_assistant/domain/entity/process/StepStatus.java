@@ -76,4 +76,8 @@ public class StepStatus {
         this.completedAt = completedAt;
         this.isSuccessful = isSuccessful;
     }
+
+    public StepStatusId getFullId() {
+        return new StepStatusId(employeeId, startProcessId, processId, stepId);
+    }
 }

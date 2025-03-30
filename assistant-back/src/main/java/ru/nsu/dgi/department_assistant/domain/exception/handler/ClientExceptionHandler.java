@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import ru.nsu.dgi.department_assistant.domain.dto.EntityNotFoundDto;
 import ru.nsu.dgi.department_assistant.domain.dto.InvalidRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplateDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.InvalidProcessTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;

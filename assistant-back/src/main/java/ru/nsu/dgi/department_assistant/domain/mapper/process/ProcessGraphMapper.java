@@ -2,7 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.mapper.process;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 
 @Mapper(componentModel = "spring")

@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.dto.process;
+package ru.nsu.dgi.department_assistant.domain.dto.process.execution;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.jetbrains.annotations.Nullable;

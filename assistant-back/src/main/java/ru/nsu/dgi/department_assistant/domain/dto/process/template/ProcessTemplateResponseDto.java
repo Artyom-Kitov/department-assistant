@@ -1,4 +1,4 @@
-package ru.nsu.dgi.department_assistant.domain.dto.process;
+package ru.nsu.dgi.department_assistant.domain.dto.process.template;
 
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 

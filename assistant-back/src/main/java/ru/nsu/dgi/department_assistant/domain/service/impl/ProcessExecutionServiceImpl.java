@@ -1,30 +1,32 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ConditionalExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessCancellationDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepStatusDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ConditionalExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProcessExecutionDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ConditionalTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.EmployeeAtProcess;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ExecutionHistory;
+import ru.nsu.dgi.department_assistant.domain.entity.process.Process;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Step;
 import ru.nsu.dgi.department_assistant.domain.entity.process.StepStatus;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Substep;
 import ru.nsu.dgi.department_assistant.domain.entity.process.SubstepStatus;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.EmployeeAtProcessId;
+import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepStatusId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.SubstepStatusId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.TransitionId;
@@ -33,6 +35,7 @@ import ru.nsu.dgi.department_assistant.domain.exception.InvalidStepExecutionExce
 import ru.nsu.dgi.department_assistant.domain.exception.ProcessExecutionStartException;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
+import ru.nsu.dgi.department_assistant.domain.graph.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StartStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.SubtasksStepData;
 import ru.nsu.dgi.department_assistant.domain.repository.employee.EmployeeRepository;
@@ -41,6 +44,7 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.ConditionalTran
 import ru.nsu.dgi.department_assistant.domain.repository.process.EmployeeAtProcessRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ExecutionHistoryRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.FinalTypeRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessTransitionRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepStatusRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
@@ -52,7 +56,6 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     private final StepStatusRepository stepStatusRepository;
     private final SubstepStatusRepository substepStatusRepository;
     private final EmployeeRepository employeeRepository;
+    private final ProcessRepository processRepository;
     private final CommonTransitionRepository commonTransitionRepository;
     private final ConditionalTransitionRepository conditionalTransitionRepository;
     private final FinalTypeRepository finalTypeRepository;
@@ -75,6 +79,30 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
     private final ProcessTransitionRepository processTransitionRepository;
 
     private final ExecutionHistoryRepository executionHistoryRepository;
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProcessExecutionStatusDto> getProcessStatuses() {
+        record IdAndName(UUID processId, String name) {}
+        return employeeAtProcessRepository.findAll().stream()
+                .collect(Collectors.groupingBy(e -> {
+                    Process process = processRepository.findById(e.getProcessId())
+                            .orElseThrow();
+                    return new IdAndName(process.getId(), process.getName());
+                }))
+                .entrySet().stream()
+                .map(e -> {
+                    List<StepStatusDto> statuses = e.getValue().stream()
+                            .map(s -> {
+                                var stepStatusId = new StepStatusId(s.getEmployeeId(), s.getProcessId(),
+                                        s.getCurrentStepProcessId(), s.getCurrentStepId());
+                                return mapToDto(stepStatusRepository.findById(stepStatusId).orElseThrow());
+                            })
+                            .toList();
+                    return new ProcessExecutionStatusDto(e.getKey().processId(), e.getKey().name(), statuses);
+                })
+                .toList();
+    }
 
     @Transactional
     @Override
@@ -84,10 +112,12 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         if (employeeAtProcessRepository.existsById(id)) {
             throw new ProcessExecutionStartException(request.employeeId(), request.processId());
         }
-        employeeAtProcessRepository.save(new EmployeeAtProcess(request.employeeId(), request.processId(), null,
-                LocalDate.now(), deadline));
         ProcessTemplateResponseDto process = processTemplateService.getProcessById(request.processId());
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
+
+        int current = ((CommonStepData) graph.getNode(graph.start()).getData()).getNext();
+        employeeAtProcessRepository.save(new EmployeeAtProcess(request.employeeId(), request.processId(), null,
+                LocalDate.now(), deadline, request.processId(), current, null));
         markAsStarted(request.employeeId(), request.processId(), request.processId(), graph.start(),
                 graph, deadline);
     }
@@ -114,13 +144,13 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         if (stepStatus.getStep().getType() != StepType.COMMON.getValue()) {
             throw new InvalidStepExecutionException();
         }
-        checkIfPossibleToComplete(stepStatus);
+        checkIfPossibleToComplete(stepStatus, employeeAtProcessId);
 
         LocalDate completedAt = LocalDate.now();
         stepStatus.setCompletedAt(completedAt);
         stepStatus.setIsSuccessful(true);
         stepStatusRepository.save(stepStatus);
-        completeNextIfFinalOrTransition(stepStatus);
+        postProcess(stepStatus);
     }
 
     @Transactional
@@ -142,7 +172,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 step.getProcessId(), step.getId());
         StepStatus stepStatus = stepStatusRepository.findById(stepStatusId)
                 .orElseThrow(InvalidStepExecutionException::new);
-        checkIfPossibleToComplete(stepStatus);
+        checkIfPossibleToComplete(stepStatus, employeeAtProcessId);
 
         substepStatus.setCompleted(true);
         substepStatusRepository.save(substepStatus);
@@ -150,7 +180,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
             stepStatus.setCompletedAt(LocalDate.now());
             stepStatus.setIsSuccessful(true);
             stepStatusRepository.save(stepStatus);
-            completeNextIfFinalOrTransition(stepStatus);
+            postProcess(stepStatus);
         }
     }
 
@@ -167,7 +197,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         if (stepStatus.getStep().getType() != StepType.CONDITIONAL.getValue()) {
             throw new InvalidStepExecutionException();
         }
-        checkIfPossibleToComplete(stepStatus);
+        checkIfPossibleToComplete(stepStatus, employeeAtProcessId);
         stepStatus.setCompletedAt(LocalDate.now());
         stepStatus.setIsSuccessful(dto.successful());
 
@@ -179,7 +209,13 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         ProcessGraph graph = processSavingService.loadTemplate(dto.processId());
         markAsStarted(dto.employeeId(), dto.startProcessId(), dto.processId(), nextStepId, graph,
                 employeeAtProcess.getDeadline());
-        completeNextIfFinalOrTransition(stepStatus, nextStepId);
+        postProcess(stepStatus, nextStepId);
+    }
+
+    private void updateCurrentStep(EmployeeAtProcess employeeAtProcess, int stepId, UUID processId) {
+        employeeAtProcess.setCurrentStepId(stepId);
+        employeeAtProcess.setCurrentStepProcessId(processId);
+        employeeAtProcessRepository.save(employeeAtProcess);
     }
 
     private boolean otherSubstepsAreCompleted(SubstepStatus substepStatus) {
@@ -194,44 +230,75 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         });
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public List<StepStatusDto> getStatuses(ProcessExecutionStatusRequestDto request) {
-        var employeeAtProcessId = new EmployeeAtProcessId(request.employeeId(), request.processId());
+    public EmployeeProcessExecutionDto getStatuses(UUID employeeId, UUID processId) {
+        var employeeAtProcessId = new EmployeeAtProcessId(employeeId, processId);
         if (!employeeAtProcessRepository.existsById(employeeAtProcessId)) {
             throw new EntityNotFoundException(employeeAtProcessId.toString());
         }
-        return stepStatusRepository.findByEmployeeAndStartProcess(request.employeeId(), request.processId()).stream()
-                .map(status -> new StepStatusDto(
-                        status.getEmployeeId(),
-                        status.getProcessId(),
-                        status.getStepId(),
-                        status.getStartProcessId(),
-                        status.getDeadline(),
-                        status.getCompletedAt(),
-                        status.getIsSuccessful()
-                ))
+        List<StepStatus> statuses = stepStatusRepository.findByEmployeeAndStartProcess(employeeId, processId);
+        List<StepStatus> completed = statuses.stream()
+                .filter(status -> status.getCompletedAt() != null)
+                .toList();
+
+        EmployeeAtProcess employeeAtProcess = employeeAtProcessRepository
+                .findById(new EmployeeAtProcessId(employeeId, processId))
+                .orElseThrow();
+        StepStatus current = stepStatusRepository.findById(new StepStatusId(employeeId, processId,
+                employeeAtProcess.getCurrentStepProcessId(), employeeAtProcess.getCurrentStepId()))
+                .orElseThrow();
+        List<StepStatus> toComplete = statuses.stream()
+                .filter(s -> s.getCompletedAt() == null && !s.getFullId().equals(current.getFullId()))
+                .toList();
+
+        return new EmployeeProcessExecutionDto(
+                completed.stream().map(this::mapToDto).toList(),
+                mapToDto(current),
+                toComplete.stream().map(this::mapToDto).toList()
+        );
+    }
+
+    private StepStatusDto mapToDto(StepStatus status) {
+        List<SubstepStatusDto> substepStatuses = null;
+        if (status.getStep().getType() == StepType.SUBTASKS.getValue()) {
+            substepStatuses = getSubstepsStatuses(status);
+        }
+        return new StepStatusDto(
+                status.getEmployeeId(),
+                status.getProcessId(),
+                status.getStepId(),
+                status.getStartProcessId(),
+                status.getDeadline(),
+                status.getCompletedAt(),
+                status.getIsSuccessful(),
+                substepStatuses
+        );
+    }
+
+    private List<SubstepStatusDto> getSubstepsStatuses(StepStatus stepStatus) {
+        return substepRepository.findAllByStep(stepStatus.getStep()).stream()
+                .map(s -> {
+                    SubstepStatusId statusId = new SubstepStatusId(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(),
+                            s.getId());
+                    return substepStatusRepository.findById(statusId).orElseThrow();
+                })
+                .map(s -> new SubstepStatusDto(s.getSubstepId(), s.isCompleted()))
                 .toList();
     }
 
-    @Override
-    public List<SubstepsInProcessStatusDto> getSubstepsStatuses(ProcessExecutionStatusRequestDto request) {
-        return substepStatusRepository.findAllByEmployeeAndStartProcess(
-                request.employeeId(), request.processId()).stream()
-                .collect(Collectors.groupingBy(s -> s.getSubstep().getStep().getStepId())).entrySet().stream()
-                .map(entry -> new SubstepsInProcessStatusDto(entry.getKey().getProcessId(), entry.getKey().getId(),
-                        entry.getValue().stream().map(s -> new SubstepStatusDto(s.getSubstepId(),
-                                s.isCompleted())).toList()))
-                .toList();
-    }
-
-
-    private void completeNextIfFinalOrTransition(StepStatus stepStatus) {
+    private void postProcess(StepStatus stepStatus) {
         TransitionId transitionId = new TransitionId(stepStatus.getStepId(), stepStatus.getProcessId());
         CommonTransition transition = commonTransitionRepository.findById(transitionId).orElseThrow();
-        completeNextIfFinalOrTransition(stepStatus, transition.getNextStepId());
+        postProcess(stepStatus, transition.getNextStepId());
     }
 
-    private void completeNextIfFinalOrTransition(StepStatus stepStatus, int nextStepId) {
+    private void postProcess(StepStatus stepStatus, int nextStepId) {
+        var employeeAtProcess = employeeAtProcessRepository
+                .findById(new EmployeeAtProcessId(stepStatus.getEmployeeId(), stepStatus.getProcessId()))
+                .orElseThrow();
+        updateCurrentStep(employeeAtProcess, nextStepId, stepStatus.getProcessId());
+
         StepStatusId nextStepStatusId = new StepStatusId(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(),
                 stepStatus.getProcessId(), nextStepId);
         StepStatus nextStepStatus = stepStatusRepository.findById(nextStepStatusId).orElseThrow();
@@ -264,39 +331,24 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         stepStatusRepository.save(stepStatus);
         ProcessTemplateResponseDto nextProcess = processTemplateService.getProcessById(nextProcessId);
         var graph = processGraphService.buildGraph(nextProcessId, nextProcess.name(), nextProcess.steps());
+
+        int current = ((CommonStepData) graph.getNode(graph.start()).getData()).getNext();
+        var employeeAtProcess = stepStatus.getEmployeeAtProcess();
+        employeeAtProcess.setCurrentStepProcessId(nextProcessId);
+        employeeAtProcess.setCurrentStepId(current);
+        employeeAtProcessRepository.save(employeeAtProcess);
+
         markAsStarted(stepStatus.getEmployeeId(), stepStatus.getStartProcessId(), nextProcessId, graph.start(),
                 graph, stepStatus.getEmployeeAtProcess().getDeadline());
     }
 
-    private void checkIfPossibleToComplete(StepStatus stepStatus) {
-        if (stepStatus.getCompletedAt() != null) {
+    private void checkIfPossibleToComplete(StepStatus stepStatus, EmployeeAtProcessId employeeAtProcessId) {
+        EmployeeAtProcess employeeAtProcess = employeeAtProcessRepository.findById(employeeAtProcessId).orElseThrow();
+        StepId current = employeeAtProcess.getCurrentStep().getStepId();
+        if (!stepStatus.getStep().getStepId().equals(current)) {
             throw new InvalidStepExecutionException();
         }
-        long completedPrevCommons = commonTransitionRepository.findByNextInProcess(stepStatus.getProcessId(),
-                stepStatus.getStepId()).stream()
-                .map(transition -> {
-                    StepStatusId stepStatusId = new StepStatusId(stepStatus.getEmployeeId(),
-                            stepStatus.getStartProcessId(), stepStatus.getProcessId(), transition.getStepId());
-                    return stepStatusRepository.findById(stepStatusId);
-                })
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(status -> status.getCompletedAt() != null)
-                .count();
-
-        long completedPrevConditionals = conditionalTransitionRepository.findByNextInProcess(stepStatus.getProcessId(),
-                stepStatus.getStepId()).stream()
-                .map(transition -> {
-                    StepStatusId stepStatusId = new StepStatusId(stepStatus.getEmployeeId(),
-                            stepStatus.getStartProcessId(), stepStatus.getProcessId(), transition.getStepId());
-                    return stepStatusRepository.findById(stepStatusId);
-                })
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(status -> status.getCompletedAt() != null)
-                .count();
-
-        if (completedPrevCommons == 0 && completedPrevConditionals == 0) {
+        if (stepStatus.getCompletedAt() != null) {
             throw new InvalidStepExecutionException();
         }
     }

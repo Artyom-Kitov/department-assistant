@@ -3,40 +3,57 @@ package ru.nsu.dgi.department_assistant.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ConditionalExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessCancellationDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ConditionalExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProcessExecutionDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/execute")
+@RequestMapping("/api/v1/execution")
 @RequiredArgsConstructor
+@Tag(
+        name = "Execution",
+        description = "Provides process execution methods."
+)
 public class ProcessExecutionController {
 
     private final ProcessExecutionService processExecutionService;
 
-    @PostMapping("/statuses")
-    public ResponseEntity<List<StepStatusDto>> getStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
-        return ResponseEntity.ok(processExecutionService.getStatuses(request));
+    @Operation(
+            summary = "Get executed processes",
+            description = "Get all currently executed processes. Current step status for each process is also returned."
+    )
+    @GetMapping("/all")
+    public ResponseEntity<List<ProcessExecutionStatusDto>> getProcessStatuses() {
+        return ResponseEntity.ok(processExecutionService.getProcessStatuses());
     }
 
-    @PostMapping("/substep/statuses")
-    public ResponseEntity<List<SubstepsInProcessStatusDto>> getSubstepStatuses(@RequestBody ProcessExecutionStatusRequestDto request) {
-        return ResponseEntity.ok(processExecutionService.getSubstepsStatuses(request));
+    @Operation(
+            summary = "Get all statuses of the given employee in the given process",
+            description = "Note that if subtasks list of a substep status is null, it's not a step with subtasks. " +
+                    "isSuccessful flag is needed for conditional steps to see which branch has been chosen."
+    )
+    @GetMapping("/employee")
+    public ResponseEntity<EmployeeProcessExecutionDto> getStatuses(@RequestParam UUID employeeId,
+                                                                   @RequestParam UUID processId) {
+        return ResponseEntity.ok(processExecutionService.getStatuses(employeeId, processId));
     }
 
     @Operation(
@@ -65,6 +82,7 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Cancel process execution")
     @DeleteMapping("/cancel")
     public ResponseEntity<Void> cancelExecution(@RequestBody ProcessCancellationDto request) {
         processExecutionService.cancel(request);

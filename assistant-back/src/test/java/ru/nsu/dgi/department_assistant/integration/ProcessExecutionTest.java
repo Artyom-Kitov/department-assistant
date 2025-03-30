@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import ru.nsu.dgi.department_assistant.config.StepType;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateCreationResponseDto;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ExecutionHistory;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Process;
 import ru.nsu.dgi.department_assistant.domain.entity.process.Step;
