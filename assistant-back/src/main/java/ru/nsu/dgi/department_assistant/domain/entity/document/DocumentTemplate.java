@@ -2,6 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.entity.document;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 import ru.nsu.dgi.department_assistant.config.TemplateType;
 
 import java.util.UUID;
@@ -11,11 +12,10 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-    public class DocumentTemplate {
+public class DocumentTemplate {
 
     @Id
-    @GeneratedValue
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     @Column(nullable = false)
@@ -33,7 +33,5 @@ import java.util.UUID;
 
     @Column
     private String description;
-
-
-
 }
+

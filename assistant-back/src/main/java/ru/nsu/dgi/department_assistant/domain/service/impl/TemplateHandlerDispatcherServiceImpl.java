@@ -11,8 +11,9 @@ import ru.nsu.dgi.department_assistant.domain.service.factory.TemplateHandlerFac
 import ru.nsu.dgi.department_assistant.domain.service.handler.TemplateHandler;
 
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.UUID;
 
@@ -33,21 +34,20 @@ public class TemplateHandlerDispatcherServiceImpl implements TemplateHandlerDisp
         Map<String, String> data = mapBuilderService.buildMapForPerson(employee);
 
         // Получаем файл шаблона
-        File file;
+        byte[] templateBytes;
         try {
-            file = fileService.getTemplateFile(template.fileName(), template.mimeName());
+            templateBytes = fileService.getTemplateFileBytes(template.fileName(), template.mimeName());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to read template file", e);
         }
-
         // Выбираем стратегию
         TemplateHandler<T> handler = templateHandlerFactory.getHandler(template.templateType());
 
         // Обрабатываем шаблон
-        try {
-            return handler.handleTemplate(file, data);
+        try (InputStream inputStream = new ByteArrayInputStream(templateBytes)) {
+            return handler.handleTemplate(inputStream, data); // Работаем с данными в памяти
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to process template", e);
         }
     }
 }

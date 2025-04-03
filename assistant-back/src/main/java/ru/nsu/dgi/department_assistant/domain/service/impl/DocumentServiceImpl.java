@@ -1,39 +1,14 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import com.github.petrovich4j.Case;
-import com.github.petrovich4j.Gender;
-import com.github.petrovich4j.NameType;
-import com.github.petrovich4j.Petrovich;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import ru.nsu.dgi.department_assistant.domain.dto.document.DocumentTemplateDto;
-import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.employee.EmployeeWithAllInfoResponseDto;
-import ru.nsu.dgi.department_assistant.domain.entity.document.DocumentTemplate;
 import ru.nsu.dgi.department_assistant.domain.mapper.document.DocumentTemplateMapper;
-import ru.nsu.dgi.department_assistant.domain.mapper.employee.AcademicDegreeMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.document.DocumentTemplateRepository;
 import ru.nsu.dgi.department_assistant.domain.service.DocumentService;
 import ru.nsu.dgi.department_assistant.domain.service.factory.TemplateHandlerFactory;
-import ru.nsu.dgi.department_assistant.domain.service.handler.DocxTemplateHandler;
-import ru.nsu.dgi.department_assistant.domain.service.handler.TemplateHandler;
 
-import java.io.*;
-import java.lang.reflect.Field;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -176,6 +151,7 @@ public byte[] fillAndConvertTemplate(UUID templateId, UUID employeeId){
     // Конвертируем документ в массив байтов
     return fileService.convertToBytes(document);
 }
+
 }
 
 

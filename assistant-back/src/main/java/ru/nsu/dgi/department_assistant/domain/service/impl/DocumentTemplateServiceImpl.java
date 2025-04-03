@@ -3,7 +3,6 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import ru.nsu.dgi.department_assistant.domain.dto.document.DocumentTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.entity.document.DocumentTemplate;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
@@ -11,13 +10,7 @@ import ru.nsu.dgi.department_assistant.domain.mapper.document.DocumentTemplateMa
 import ru.nsu.dgi.department_assistant.domain.repository.document.DocumentTemplateRepository;
 import ru.nsu.dgi.department_assistant.domain.service.DocumentTemplateService;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

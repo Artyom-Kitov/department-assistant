@@ -6,4 +6,5 @@ import java.util.Map;
 
 public interface MapBuilderService {
     Map<String, String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee);
+    Map<String, String> buildEmptyMap();
 }

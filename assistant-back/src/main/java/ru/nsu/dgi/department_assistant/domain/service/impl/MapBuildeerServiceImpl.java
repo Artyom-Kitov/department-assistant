@@ -6,10 +6,7 @@ import ru.nsu.dgi.department_assistant.domain.service.MapBuilderService;
 
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class MapBuildeerServiceImpl implements MapBuilderService {
@@ -17,29 +14,45 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
     @Override
     public Map<String, String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee) {
         Map<String, String> dataMap = new HashMap<>();
+        addCommonFields(dataMap); // Добавляем общие поля (например, дату)
+        processFields(employee, dataMap, ""); // Обрабатываем поля сотрудника
+        addNameFields(employee, dataMap); // Добавляем fullname и shortname
+        return dataMap;
+    }
 
-        // Добавляем текущую дату
-        Date current = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-        String date = formatter.format(current);
-        dataMap.put("date", date);
+    @Override
+    public Map<String, String> buildEmptyMap() {
+        Map<String, String> dataMap = new HashMap<>();
+        addCommonFields(dataMap); // Добавляем общие поля
+        collectAllFields(EmployeeWithAllInfoResponseDto.class, dataMap, ""); // Собираем все возможные поля
+        return dataMap;
+    }
 
-        // Обрабатываем поля EmployeeWithAllInfoResponseDto
-        processFields(employee, dataMap, "");
+    private void addCommonFields(Map<String, String> dataMap) {
+        SimpleDateFormat fullDateFormatter = new SimpleDateFormat("dd MMMM yyyy", new Locale("ru"));
+        SimpleDateFormat dayFormatter = new SimpleDateFormat("dd", new Locale("ru"));
+        SimpleDateFormat monthFormatter = new SimpleDateFormat("MMMM", new Locale("ru"));
+        SimpleDateFormat yearFormatter = new SimpleDateFormat("yyyy", new Locale("ru"));
 
-        // Добавляем fullname и shortname
+        Date currentDate = new Date();
+        dataMap.put("date", fullDateFormatter.format(currentDate));
+        dataMap.put("day", dayFormatter.format(currentDate));
+        dataMap.put("month", monthFormatter.format(currentDate));
+        dataMap.put("year", yearFormatter.format(currentDate));
+
+        dataMap.put("fullname", "");
+        dataMap.put("shortname", "");
+    }
+
+    private void addNameFields(EmployeeWithAllInfoResponseDto employee, Map<String, String> dataMap) {
         String fullName = employee.lastName() + " " + employee.firstName() + " " + employee.middleName();
         String shortName = employee.lastName() + " " + employee.firstName().charAt(0) + ". " + employee.middleName().charAt(0) + ".";
         dataMap.put("fullname", fullName);
         dataMap.put("shortname", shortName);
-
-        return dataMap;
     }
 
     private void processFields(Object obj, Map<String, String> dataMap, String prefix) {
-        if (obj == null) {
-            return;
-        }
+        if (obj == null) return;
 
         for (Field field : obj.getClass().getDeclaredFields()) {
             field.setAccessible(true);
@@ -48,10 +61,8 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
                 if (value == null) {
                     dataMap.put(prefix + field.getName(), "");
                 } else if (isSimpleType(value)) {
-                    // Простые типы (String, Boolean, Integer и т.д.)
                     dataMap.put(prefix + field.getName(), value.toString());
                 } else {
-                    // Вложенные объекты
                     processFields(value, dataMap, prefix + field.getName() + ".");
                 }
             } catch (IllegalAccessException e) {
@@ -60,8 +71,24 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
         }
     }
 
+    private void collectAllFields(Class<?> clazz, Map<String, String> dataMap, String prefix) {
+        for (Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+            if (isSimpleType(field.getType())) {
+                dataMap.put(prefix + field.getName(), ""); // Добавляем поле с пустым значением
+            } else {
+                collectAllFields(field.getType(), dataMap, prefix + field.getName() + "."); // Рекурсия для вложенных объектов
+            }
+        }
+    }
+
     private boolean isSimpleType(Object value) {
         return value instanceof String || value instanceof Boolean || value instanceof Integer ||
                 value instanceof Long || value instanceof Double || value instanceof UUID;
+    }
+
+    private boolean isSimpleType(Class<?> clazz) {
+        return clazz.equals(String.class) || clazz.equals(Boolean.class) || clazz.equals(Integer.class) ||
+                clazz.equals(Long.class) || clazz.equals(Double.class) || clazz.equals(UUID.class);
     }
 }
