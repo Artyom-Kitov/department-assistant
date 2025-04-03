@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS templates;
 
-CREATE TABLE templates.files (
+CREATE TABLE IF NOT EXISTS templates.files (
     id BIGSERIAL PRIMARY KEY,
     fs_file_name VARCHAR(255),
     file_name VARCHAR(255) NOT NULL,
