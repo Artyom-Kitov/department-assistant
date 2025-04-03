@@ -25,4 +25,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
             "LEFT JOIN FETCH e.academicDegree " +
             "WHERE e.id = :id")
     Optional<Employee> findEmployeeWithInfoById(@Param("id") UUID id);
+    Optional<Employee> findByInn(String inn);
+    Optional<Employee> findBySnils(String snils);
 }

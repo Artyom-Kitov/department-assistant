@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.EntityNotFoundDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.InvalidProcessTemplateDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateCreationResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateResponseDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessTemplateShortDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.InvalidProcessTemplateDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateCreationRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateCreationResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateResponseDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.util.List;
@@ -32,6 +33,10 @@ import java.util.UUID;
 @RequestMapping("/api/v1/templates")
 @RequiredArgsConstructor
 @Validated
+@Tag(
+        name = "Process templates",
+        description = "Provides process template creation methods."
+)
 public class ProcessTemplateController {
 
     private final ProcessTemplateService processTemplateService;
@@ -209,6 +214,14 @@ public class ProcessTemplateController {
         return ResponseEntity.ok(processTemplateService.getProcessById(id));
     }
 
+    @Operation(
+            summary = "Update process by ID",
+            description = """
+                    Same as creation.
+                    
+                    See [POST /api/v1/templates](#/process-template-controller/createTemplate) for more info.
+                    """
+    )
     @PutMapping("/{id}")
     public ResponseEntity<Void> editById(@PathVariable UUID id, @Valid @RequestBody ProcessTemplateCreationRequestDto request) {
         processTemplateService.updateById(id, request);

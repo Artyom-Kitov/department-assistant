@@ -1,17 +1,19 @@
 package ru.nsu.dgi.department_assistant.domain.service;
 
-import ru.nsu.dgi.department_assistant.domain.dto.process.ConditionalExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessCancellationDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.ProcessExecutionStatusRequestDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.StepStatusDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepExecutedDto;
-import ru.nsu.dgi.department_assistant.domain.dto.process.SubstepsInProcessStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ConditionalExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProcessExecutionDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface ProcessExecutionService {
+    List<ProcessExecutionStatusDto> getProcessStatuses();
+
     void startForEmployee(ProcessExecutionRequestDto request);
 
     void cancel(ProcessCancellationDto request);
@@ -22,7 +24,5 @@ public interface ProcessExecutionService {
 
     void executeConditional(ConditionalExecutedDto dto);
 
-    List<StepStatusDto> getStatuses(ProcessExecutionStatusRequestDto request);
-
-    List<SubstepsInProcessStatusDto> getSubstepsStatuses(ProcessExecutionStatusRequestDto request);
+    EmployeeProcessExecutionDto getStatuses(UUID employeeId, UUID processId);
 }

@@ -1,5 +1,6 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import jakarta.persistence.NonUniqueResultException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import ru.nsu.dgi.department_assistant.domain.repository.employee.EmployeeReposi
 import ru.nsu.dgi.department_assistant.domain.service.EmployeeService;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -76,7 +78,25 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(id.toString())
         );
+
+        // Проверяем уникальность inn
+        if (employeeRequestDto.inn() != null) {
+            Optional<Employee> employeeWithSameInn = employeeRepository.findByInn(employeeRequestDto.inn());
+            if (employeeWithSameInn.isPresent() && !employeeWithSameInn.get().getId().equals(id)) {
+                throw new NonUniqueResultException("Employee with inn " + employeeRequestDto.inn() + " already exists");
+            }
+        }
+
+        // Проверяем уникальность snils
+        if (employeeRequestDto.snils() != null) {
+            Optional<Employee> employeeWithSameSnils = employeeRepository.findBySnils(employeeRequestDto.snils());
+            if (employeeWithSameSnils.isPresent() && !employeeWithSameSnils.get().getId().equals(id)) {
+                throw new NonUniqueResultException("Employee with snils " + employeeRequestDto.snils() + " already exists");
+            }
+        }
+
         employeeMapper.updateRequestToEntity(employeeRequestDto, employee);
+        employeeRepository.save(employee);
 
         return employeeMapper.entityToResponseDto(employee);
     }
