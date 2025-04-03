@@ -11,8 +11,10 @@ import ru.nsu.dgi.department_assistant.domain.dto.InvalidRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.template.InvalidProcessTemplateDto;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityAlreadyExistsException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
+import ru.nsu.dgi.department_assistant.domain.exception.StorageFileException;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 import ru.nsu.dgi.department_assistant.domain.exception.NullPropertyException;
+import ru.nsu.dgi.department_assistant.domain.exception.StorageCreationFailureException;
 
 @Slf4j
 @ControllerAdvice
@@ -58,6 +60,28 @@ public class ClientExceptionHandler {
                         e.getMessage()
                 ),
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(StorageCreationFailureException.class)
+    public ResponseEntity<InvalidRequestDto> handleStorageCreationFailureException(StorageCreationFailureException e) {
+        log.error(e.getClass().getSimpleName() + ": ", e);
+        return new ResponseEntity<>(
+                new InvalidRequestDto(
+                        "Failed to create file storage. Message: " + e.getMessage() + "; cause: " + e.getCause()
+                ),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @ExceptionHandler(StorageFileException.class)
+    public ResponseEntity<InvalidRequestDto> handleStorageFileException(StorageFileException e) {
+        log.error(e.getClass().getSimpleName() + ": ", e);
+        return new ResponseEntity<>(
+                new InvalidRequestDto(
+                        "Failed to do an action with a file. Message: " + e.getMessage() + "; cause: " + e.getCause()
+                ),
+                HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
 }
