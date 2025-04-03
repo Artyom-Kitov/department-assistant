@@ -27,7 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileStorageService {
     @Value("${file.storage-path}")
-    private final Path rootLocation;
+    private Path rootLocation;
     private final FileEntityMapper fileEntityMapper;
     private final FileRepository fileRepository;
 
@@ -44,7 +44,8 @@ public class FileStorageService {
             MultipartFile file,
             String fileName,
             String fileExtension,
-            FileEntity.TemplateType templateType
+            FileEntity.TemplateType templateType,
+            String subjectText
     ) {
         try {
             String fsFileName = UUID.randomUUID().toString();
@@ -60,6 +61,7 @@ public class FileStorageService {
             entity.setFileName(fileName);
             entity.setFsFileName(fsFileName);
             entity.setFileExtension(fileExtension);
+            entity.setSubjectText(subjectText);
             entity.setSize(file.getSize());
             entity.setUploadDate(LocalDateTime.now());
             entity.setTemplateType(templateType);
@@ -83,7 +85,8 @@ public class FileStorageService {
             MultipartFile newFile,
             String fileName,
             String fileExtension,
-            FileEntity.TemplateType templateType
+            FileEntity.TemplateType templateType,
+            String subjectText
     ) {
         FileEntity entity = fileRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
@@ -103,6 +106,7 @@ public class FileStorageService {
             entity.setFileName(fileName);
             entity.setFsFileName(fsFileName);
             entity.setFileExtension(fileExtension);
+            entity.setSubjectText(subjectText);
             entity.setSize(newFile.getSize());
             entity.setUploadDate(LocalDateTime.now());
             entity.setTemplateType(templateType);

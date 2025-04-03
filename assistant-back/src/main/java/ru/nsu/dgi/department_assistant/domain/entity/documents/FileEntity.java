@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "files")
+@Table(schema = "templates", name = "files")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,7 +38,7 @@ public class FileEntity {
     @Enumerated(EnumType.STRING)
     private TemplateType templateType;
 
-    @Column(name = "file_size")
+    @Column(name = "size")
     private Long size;
 
     @Column(name = "upload_date")
