@@ -61,7 +61,7 @@ const CurrentProcesses: React.FC = () => {
           <Link to="/processes/createprocess">
             <button className="flex items-center  space-x-2 bg-[#4fff9e] text-gray-700 px-4 py-2 rounded-md hover:bg-green-600">
               <FaPlus className="text-lg" />
-              <span>Создать процесс</span>
+              <span>Шаблоны</span>
             </button>
           </Link>
         </div>
