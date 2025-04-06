@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@radix-ui/react-navigation-menu": "^1.2.1",
+    "@xyflow/react": "^12.4.3",
+    "axios": "^1.7.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
+    "prism-react-renderer": "^2.4.1",
     "react": "^18.3.1",
     "react-calendar": "^5.1.0",
     "react-dnd": "^16.0.1",
