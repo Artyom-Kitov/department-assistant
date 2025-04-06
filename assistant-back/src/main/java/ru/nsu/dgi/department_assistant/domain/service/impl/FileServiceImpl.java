@@ -23,7 +23,7 @@ public class FileServiceImpl implements FileService {
     }
 
     public byte[] getTemplateFileBytes(Path filePath) throws IOException {
-        return Files.readAllBytes(filePath); // Чтение файла в массив байтов
+        return Files.readAllBytes(filePath); 
     }
 
 }

@@ -124,21 +124,18 @@ public class DeclensionServiceImpl implements DeclensionService {
     public Gender detectGenderByLastName(String lastName) {
         String lowerLastName = lastName.toLowerCase();
 
-        // 1. Проверка исключений
         for (Rule rule : Library.LAST_NAME_RULES.exceptions) {
             if (matchesAnyTest(lowerLastName, rule.test)) {
                 return rule.gender;
             }
         }
 
-        // 2. Проверка суффиксов
         for (Rule rule : Library.LAST_NAME_RULES.suffixes) {
             if (matchesAnyTest(lowerLastName, rule.test)) {
                 return rule.gender;
             }
         }
 
-        // 3. Стандартные правила по окончанию
         return defaultGenderDetection(lowerLastName);
     }
 
@@ -152,7 +149,6 @@ public class DeclensionServiceImpl implements DeclensionService {
     }
 
     private Gender defaultGenderDetection(String lowerLastName) {
-        // Эвристика для базовых случаев
         if (lowerLastName.endsWith("ова") ||
                 lowerLastName.endsWith("ева") ||
                 lowerLastName.endsWith("ина")) {
@@ -165,28 +161,24 @@ public class DeclensionServiceImpl implements DeclensionService {
     private Gender detectGenderByFirstName(String firstName) {
         String lowerName = firstName.toLowerCase();
 
-        // Проверка исключений
         for (Rule rule : Library.FIRST_NAME_RULES.exceptions) {
             if (matchesAnyTest(lowerName, rule.test)) {
                 return rule.gender;
             }
         }
 
-        // Проверка суффиксов
         for (Rule rule : Library.FIRST_NAME_RULES.suffixes) {
             if (matchesAnyTest(lowerName, rule.test)) {
                 return rule.gender;
             }
         }
 
-        // Стандартные правила
         return defaultGenderDetectionForName(lowerName);
     }
 
 
 
     private Gender defaultGenderDetectionForName(String lowerName) {
-        // Базовые правила для имен
         if (lowerName.endsWith("а") ||
                 lowerName.endsWith("я") ||
                 lowerName.endsWith("ья")) {
