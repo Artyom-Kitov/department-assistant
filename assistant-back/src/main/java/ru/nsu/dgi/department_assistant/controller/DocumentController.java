@@ -3,10 +3,9 @@ package ru.nsu.dgi.department_assistant.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.core.io.Resource;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import ru.nsu.dgi.department_assistant.domain.dto.document.DocumentTemplateDto;
-import ru.nsu.dgi.department_assistant.domain.service.DocumentService;
-import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 import ru.nsu.dgi.department_assistant.domain.service.impl.DocumentServiceImpl;
 
 import java.util.UUID;
@@ -53,7 +48,7 @@ public class DocumentController {
         )
         @PostMapping("/fill")
         public ResponseEntity<Resource> fillTemplate(
-                @RequestParam UUID templateId,
+                @RequestParam Long templateId,
                 @RequestParam UUID employeeId) {
             byte[] bytes = documentService.fillAndConvertTemplate(templateId,employeeId);
             ByteArrayResource resource = new ByteArrayResource(bytes);

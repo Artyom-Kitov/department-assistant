@@ -1,86 +1,197 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import com.github.petrovich4j.Case;
-import com.github.petrovich4j.Gender;
-import com.github.petrovich4j.NameType;
-import com.github.petrovich4j.Petrovich;
+import com.github.petrovich4j.*;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.service.DeclensionService;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class DeclensionServiceImpl implements DeclensionService {
 
+    private final Petrovich petrovich = new Petrovich();
+    private final Map<String, Gender> genderCache = new ConcurrentHashMap<>();
+
     @Override
     public String declineName(String key, String value, String caseType) {
-        // Определяем падеж
-        Case pCase;
-        switch (caseType) {
-            case "i" -> pCase = Case.Prepositional; // Предложный
-            case "r" -> pCase = Case.Genitive;      // Родительный
-            case "d" -> pCase = Case.Dative;        // Дательный
-            case "v" -> pCase = Case.Accusative;    // Винительный
-            case "t" -> pCase = Case.Instrumental;  // Творительный
-            default -> {
-                // Если падеж не указан или не поддерживается, возвращаем исходное значение
-                return value;
+        Case pCase = parseCase(caseType);
+        if (pCase == null) return value;
+
+        return switch (key) {
+            case "fullname" -> declineFullName(value, pCase);
+            case "shortname" -> declineShortName(value, pCase);
+            case "lastName" -> declineLastName(value, pCase);
+            case "firstName" -> declineFirstName(value, pCase);
+            case "middleName" -> declineMiddleName(value, pCase);
+            default -> value;
+        };
+    }
+
+    private String declineFullName(String fullName, Case pCase) {
+        String[] parts = normalizeName(fullName).split(" ");
+        if (parts.length < 2) return fullName;
+
+        Gender gender = determineGender(parts);
+
+        return switch (parts.length) {
+            case 4 -> handleCompoundName(parts, gender, pCase);
+            case 3 -> String.join(" ",
+                    declinePart(parts[0], NameType.LastName, pCase, gender),
+                    declinePart(parts[1], NameType.FirstName, pCase, gender),
+                    declinePart(parts[2], NameType.PatronymicName, pCase, gender)
+            );
+            case 2 -> String.join(" ",
+                    declinePart(parts[0], NameType.LastName, pCase, gender),
+                    declinePart(parts[1], NameType.FirstName, pCase, gender)
+            );
+            default -> fullName;
+        };
+    }
+
+    private Gender determineGender(String[] nameParts) {
+        String cacheKey = String.join("|", nameParts);
+        return genderCache.computeIfAbsent(cacheKey, k -> {
+            if (nameParts.length >= 3) {
+                return petrovich.gender(nameParts[2], Gender.Both);
             }
-        }
+            return detectGenderByLastName(nameParts[0]);
+        });
+    }
 
-        // Определяем тип (фамилия, имя, отчество, полное имя, короткое имя)
-        NameType type;
-        switch (key) {
-            case "lastName" -> type = NameType.LastName;
-            case "firstName" -> type = NameType.FirstName;
-            case "middleName" -> type = NameType.PatronymicName;
-            case "fullname" -> {
-                // Разделяем полное имя на части
-                String[] parts = value.split(" ");
-                if (parts.length < 2) {
-                    return value; // Если ФИО неполное, возвращаем исходное значение
-                }
+    private String handleCompoundName(String[] parts, Gender gender, Case pCase) {
+        String[] surnameParts = parts[0].split("-");
+        String declinedSurname = Arrays.stream(surnameParts)
+                .map(part -> declinePart(part, NameType.LastName, pCase, gender))
+                .collect(Collectors.joining("-"));
 
-                // Склоняем фамилию и имя
-                String lastName = declinePart(parts[0], NameType.LastName, pCase);
-                String firstName = declinePart(parts[1], NameType.FirstName, pCase);
+        return String.join(" ",
+                declinedSurname,
+                declinePart(parts[1], NameType.FirstName, pCase, gender),
+                parts.length > 2 ? declinePart(parts[2], NameType.PatronymicName, pCase, gender) : "",
+                parts.length > 3 ? parts[3] : ""
+        ).trim();
+    }
 
-                // Склоняем отчество, если оно есть
-                String middleName = parts.length > 2 ? declinePart(parts[2], NameType.PatronymicName, pCase) : null;
+    private String declineShortName(String value, Case pCase) {
+        String[] parts = normalizeName(value).split(" ");
+        if (parts.length < 2) return value;
 
-                // Собираем результат
-                return middleName != null ? lastName + " " + firstName + " " + middleName : lastName + " " + firstName;
-            }
-            case "shortname" -> {
-                // Разделяем короткое имя на части
-                String[] parts = value.split(" ");
-                if (parts.length < 2) {
-                    return value; // Если ФИО неполное, возвращаем исходное значение
-                }
+        Gender gender = determineGender(parts);
+        String lastName = declinePart(parts[0], NameType.LastName, pCase, gender);
+        String initials = Arrays.stream(parts, 1, parts.length)
+                .map(s -> s.charAt(0) + ".")
+                .collect(Collectors.joining(" "));
 
-                // Склоняем фамилию
-                String lastName = declinePart(parts[0], NameType.LastName, pCase);
-                String firstNameInitial = parts[1].substring(0, 1) + ".";
-                String middleNameInitial = parts.length > 2 ? parts[2].substring(0, 1) + "." : null;
+        return lastName + " " + initials;
+    }
 
-                // Собираем результат
-                return middleNameInitial != null ? lastName + " " + firstNameInitial + " " + middleNameInitial : lastName + " " + firstNameInitial;
-            }
-            default -> {
-                // Если ключ не связан с ФИО, возвращаем исходное значение
-                return value;
-            }
-        }
+    private String declineLastName(String value, Case pCase) {
+        Gender gender = detectGenderByLastName(value);
+        return petrovich.say(value, NameType.LastName, gender, pCase);
+    }
 
-        // Определяем пол (гендер)
-        Petrovich petrovich = new Petrovich();
+    private String declineMiddleName(String value, Case pCase) {
         Gender gender = petrovich.gender(value, Gender.Both);
+        return petrovich.say(value, NameType.PatronymicName, gender, pCase);
+    }
 
-        // Склоняем значение
+    private String declineFirstName(String value, Case pCase) {
+        Gender gender = detectGenderByFirstName(value);
+        return petrovich.say(value, NameType.FirstName, gender, pCase);
+    }
+
+    private String declinePart(String value, NameType type, Case pCase, Gender gender) {
         return petrovich.say(value, type, gender, pCase);
     }
 
-    private String declinePart(String value, NameType type, Case pCase) {
-        Petrovich petrovich = new Petrovich();
-        Gender gender = petrovich.gender(value, Gender.Both);
-        return petrovich.say(value, type, gender, pCase);
+    private String normalizeName(String name) {
+        return name.trim().replaceAll("\\s+", " ");
+    }
+
+    private Case parseCase(String caseType) {
+        return switch (caseType.toLowerCase()) {
+            case "i", "предложный" -> Case.Prepositional;
+            case "r", "родительный" -> Case.Genitive;
+            case "d", "дательный" -> Case.Dative;
+            case "v", "винительный" -> Case.Accusative;
+            case "t", "творительный" -> Case.Instrumental;
+            default -> null;
+        };
+    }
+    public Gender detectGenderByLastName(String lastName) {
+        String lowerLastName = lastName.toLowerCase();
+
+        // 1. Проверка исключений
+        for (Rule rule : Library.LAST_NAME_RULES.exceptions) {
+            if (matchesAnyTest(lowerLastName, rule.test)) {
+                return rule.gender;
+            }
+        }
+
+        // 2. Проверка суффиксов
+        for (Rule rule : Library.LAST_NAME_RULES.suffixes) {
+            if (matchesAnyTest(lowerLastName, rule.test)) {
+                return rule.gender;
+            }
+        }
+
+        // 3. Стандартные правила по окончанию
+        return defaultGenderDetection(lowerLastName);
+    }
+
+    private boolean matchesAnyTest(String name, String[] tests) {
+        for (String test : tests) {
+            if (name.endsWith(test)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Gender defaultGenderDetection(String lowerLastName) {
+        // Эвристика для базовых случаев
+        if (lowerLastName.endsWith("ова") ||
+                lowerLastName.endsWith("ева") ||
+                lowerLastName.endsWith("ина")) {
+            return Gender.Female;
+        }
+        return Gender.Male;
+    }
+
+
+    private Gender detectGenderByFirstName(String firstName) {
+        String lowerName = firstName.toLowerCase();
+
+        // Проверка исключений
+        for (Rule rule : Library.FIRST_NAME_RULES.exceptions) {
+            if (matchesAnyTest(lowerName, rule.test)) {
+                return rule.gender;
+            }
+        }
+
+        // Проверка суффиксов
+        for (Rule rule : Library.FIRST_NAME_RULES.suffixes) {
+            if (matchesAnyTest(lowerName, rule.test)) {
+                return rule.gender;
+            }
+        }
+
+        // Стандартные правила
+        return defaultGenderDetectionForName(lowerName);
+    }
+
+
+
+    private Gender defaultGenderDetectionForName(String lowerName) {
+        // Базовые правила для имен
+        if (lowerName.endsWith("а") ||
+                lowerName.endsWith("я") ||
+                lowerName.endsWith("ья")) {
+            return Gender.Female;
+        }
+        return Gender.Male;
     }
 }

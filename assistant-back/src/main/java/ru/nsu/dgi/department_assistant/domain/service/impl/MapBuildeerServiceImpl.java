@@ -14,17 +14,17 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
     @Override
     public Map<String, String> buildMapForPerson(EmployeeWithAllInfoResponseDto employee) {
         Map<String, String> dataMap = new HashMap<>();
-        addCommonFields(dataMap); // Добавляем общие поля (например, дату)
-        processFields(employee, dataMap, ""); // Обрабатываем поля сотрудника
-        addNameFields(employee, dataMap); // Добавляем fullname и shortname
+        addCommonFields(dataMap);
+        processFields(employee, dataMap, "");
+        addNameFields(employee, dataMap);
         return dataMap;
     }
 
     @Override
     public Map<String, String> buildEmptyMap() {
         Map<String, String> dataMap = new HashMap<>();
-        addCommonFields(dataMap); // Добавляем общие поля
-        collectAllFields(EmployeeWithAllInfoResponseDto.class, dataMap, ""); // Собираем все возможные поля
+        addCommonFields(dataMap);
+        collectAllFields(EmployeeWithAllInfoResponseDto.class, dataMap, "");
         return dataMap;
     }
 
@@ -52,18 +52,39 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
     }
 
     private void processFields(Object obj, Map<String, String> dataMap, String prefix) {
-        if (obj == null) return;
+        if (obj == null) {
+            return;
+        }
+
+        if (obj.getClass().getPackage() != null &&
+                (obj.getClass().getPackage().getName().startsWith("java.") ||
+                        obj.getClass().getPackage().getName().startsWith("javax."))) {
+            dataMap.put(prefix + "value", obj.toString());
+            return;
+        }
 
         for (Field field : obj.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
             try {
+                if (!field.trySetAccessible()) {
+                    continue; // Пропускаем поля, к которым нет доступа
+                }
+
                 Object value = field.get(obj);
+                String fieldName = prefix + field.getName();
+
                 if (value == null) {
-                    dataMap.put(prefix + field.getName(), "");
+                    dataMap.put(fieldName, "");
                 } else if (isSimpleType(value)) {
-                    dataMap.put(prefix + field.getName(), value.toString());
+                    dataMap.put(fieldName, value.toString());
+                } else if (value instanceof Collection) {
+                    // Обработка коллекций
+                    int index = 0;
+                    for (Object item : (Collection<?>) value) {
+                        processFields(item, dataMap, fieldName + "[" + index + "].");
+                        index++;
+                    }
                 } else {
-                    processFields(value, dataMap, prefix + field.getName() + ".");
+                    processFields(value, dataMap, fieldName + ".");
                 }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("Ошибка при обработке поля: " + field.getName(), e);
@@ -71,21 +92,41 @@ public class MapBuildeerServiceImpl implements MapBuilderService {
         }
     }
 
+    private boolean isSimpleType(Object value) {
+        Class<?> clazz = value.getClass();
+        return clazz.isPrimitive() ||
+                clazz.isEnum() ||
+                Number.class.isAssignableFrom(clazz) ||
+                CharSequence.class.isAssignableFrom(clazz) ||
+                Date.class.isAssignableFrom(clazz) ||
+                Boolean.class == clazz;
+    }
+
     private void collectAllFields(Class<?> clazz, Map<String, String> dataMap, String prefix) {
+        if (clazz.getPackage() != null &&
+                (clazz.getPackage().getName().startsWith("java.") ||
+                        clazz.getPackage().getName().startsWith("javax."))) {
+            return;
+        }
+
         for (Field field : clazz.getDeclaredFields()) {
-            field.setAccessible(true);
-            if (isSimpleType(field.getType())) {
-                dataMap.put(prefix + field.getName(), ""); // Добавляем поле с пустым значением
-            } else {
-                collectAllFields(field.getType(), dataMap, prefix + field.getName() + "."); // Рекурсия для вложенных объектов
+            try {
+                if (!field.trySetAccessible()) {
+                    continue;
+                }
+
+                String fieldName = prefix + field.getName();
+                if (isSimpleType(field.getType())) {
+                    dataMap.put(fieldName, "");
+                } else if (!field.getType().isArray() && !Collection.class.isAssignableFrom(field.getType())) {
+                    collectAllFields(field.getType(), dataMap, fieldName + ".");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Ошибка при сборе полей: " + field.getName(), e);
             }
         }
     }
 
-    private boolean isSimpleType(Object value) {
-        return value instanceof String || value instanceof Boolean || value instanceof Integer ||
-                value instanceof Long || value instanceof Double || value instanceof UUID;
-    }
 
     private boolean isSimpleType(Class<?> clazz) {
         return clazz.equals(String.class) || clazz.equals(Boolean.class) || clazz.equals(Integer.class) ||

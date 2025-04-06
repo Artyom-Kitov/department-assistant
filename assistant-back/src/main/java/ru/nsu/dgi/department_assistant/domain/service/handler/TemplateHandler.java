@@ -1,6 +1,5 @@
 package ru.nsu.dgi.department_assistant.domain.service.handler;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
