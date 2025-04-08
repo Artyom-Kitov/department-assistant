@@ -15,6 +15,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecuted
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ConditionalTransition;
@@ -257,6 +258,16 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 mapToDto(current),
                 toComplete.stream().map(this::mapToDto).toList()
         );
+    }
+
+    @Override
+    public List<ProcessTemplateShortDto> getByEmployee(UUID employeeId) {
+        return employeeAtProcessRepository.findAllByEmployee(employeeId).stream()
+                .map(eap -> {
+                    Process p = processRepository.findById(eap.getProcessId()).orElseThrow();
+                    return new ProcessTemplateShortDto(p.getId(), p.getName(), p.getTotalDuration());
+                })
+                .toList();
     }
 
     private StepStatusDto mapToDto(StepStatus status) {

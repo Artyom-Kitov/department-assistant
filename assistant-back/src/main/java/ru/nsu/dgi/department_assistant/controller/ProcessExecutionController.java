@@ -20,6 +20,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecu
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
@@ -105,5 +106,10 @@ public class ProcessExecutionController {
     public ResponseEntity<Void> executeConditional(@RequestBody ConditionalExecutedDto dto) {
         processExecutionService.executeConditional(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/employee")
+    public ResponseEntity<List<ProcessTemplateShortDto>> getByEmployee(@RequestParam UUID employeeId) {
+        return ResponseEntity.ok(processExecutionService.getByEmployee(employeeId));
     }
 }
