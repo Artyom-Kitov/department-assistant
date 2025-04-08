@@ -138,6 +138,12 @@ public class FileStorageService {
         return rootLocation.resolve(resolveFullFileName(entity.getFsFileName(), entity.getFileExtension()));
     }
 
+    public String getFileExtensionById(Long id){
+        FileEntity entity = fileRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
+        return entity.getFileExtension();
+    }
+
     private String resolveFullFileName(String fsFileName, String fileExtension) {
         return fsFileName + "." + fileExtension;
     }
