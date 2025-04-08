@@ -49,7 +49,7 @@ class ProcessExecutionTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private static final String BASE_URL = "/api/v1/execute";
+    private static final String BASE_URL = "/api/v1/execution";
     private static final Gson GSON = new Gson();
 
     @Autowired

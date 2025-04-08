@@ -115,7 +115,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         ProcessTemplateResponseDto process = processTemplateService.getProcessById(request.processId());
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
 
-        int current = ((CommonStepData) graph.getNode(graph.start()).getData()).getNext();
+        int current = ((StartStepData) graph.getNode(graph.start()).getData()).getNext();
         employeeAtProcessRepository.save(new EmployeeAtProcess(request.employeeId(), request.processId(), null,
                 LocalDate.now(), deadline, request.processId(), current, null));
         markAsStarted(request.employeeId(), request.processId(), request.processId(), graph.start(),
