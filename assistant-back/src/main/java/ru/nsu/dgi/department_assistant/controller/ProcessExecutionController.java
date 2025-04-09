@@ -108,7 +108,7 @@ public class ProcessExecutionController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/employee")
+    @GetMapping("/pending")
     public ResponseEntity<List<ProcessTemplateShortDto>> getByEmployee(@RequestParam UUID employeeId) {
         return ResponseEntity.ok(processExecutionService.getByEmployee(employeeId));
     }
