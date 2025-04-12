@@ -10,6 +10,8 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProc
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepCancellationRequestDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateResponseDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepStatusDto;
@@ -57,7 +59,9 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -221,16 +225,21 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         employeeAtProcessRepository.save(employeeAtProcess);
     }
 
-    private boolean otherSubstepsAreCompleted(SubstepStatus substepStatus) {
+    private List<SubstepStatus> getOtherSubstepStatuses(SubstepStatus substepStatus) {
         Step originalStep = substepStatus.getSubstep().getStep();
         List<Substep> allSubsteps = substepRepository.findAllByStep(originalStep);
-        return allSubsteps.stream().allMatch(substep -> {
-            SubstepStatusId statusId = new SubstepStatusId(substepStatus.getEmployeeId(),
-                    substepStatus.getStartProcessId(), substep.getId());
-            SubstepStatus status = substepStatusRepository.findById(statusId)
-                    .orElseThrow(InvalidStepExecutionException::new);
-            return status.isCompleted();
-        });
+        return allSubsteps.stream()
+                .map(substep ->  {
+                    SubstepStatusId statusId = new SubstepStatusId(substepStatus.getEmployeeId(),
+                            substepStatus.getStartProcessId(), substep.getId());
+                    return substepStatusRepository.findById(statusId)
+                            .orElseThrow(InvalidStepExecutionException::new);
+                })
+                .toList();
+    }
+
+    private boolean otherSubstepsAreCompleted(SubstepStatus substepStatus) {
+        return getOtherSubstepStatuses(substepStatus).stream().allMatch(SubstepStatus::isCompleted);
     }
 
     @Transactional(readOnly = true)
@@ -270,6 +279,116 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                     return new ProcessTemplateShortDto(p.getId(), p.getName(), p.getTotalDuration());
                 })
                 .toList();
+    }
+
+    @Transactional
+    @Override
+    public void cancelStep(StepCancellationRequestDto request) {
+        StepStatus status = stepStatusRepository.findById(new StepStatusId(
+                request.employeeId(), request.startProcessId(), request.processId(), request.stepId()))
+                .orElseThrow(() -> new EntityNotFoundException(request.toString()));
+        if (status.getCompletedAt() == null) {
+            throw new InvalidStepExecutionException();
+        }
+        StepType type = StepType.of(status.getStep().getType());
+        EmployeeAtProcess employeeAtProcess = status.getEmployeeAtProcess();
+        StepStatus currentStepStatus = stepStatusRepository.findById(
+                new StepStatusId(request.employeeId(), request.startProcessId(),
+                        employeeAtProcess.getCurrentStep().getProcessId(), employeeAtProcess.getCurrentStep().getId())
+        ).orElseThrow(InvalidStepExecutionException::new);
+
+        if (!getNextSteps(status.getProcessId(), status.getStepId()).contains(currentStepStatus.getStep().getStepId())) {
+            throw new InvalidStepExecutionException();
+        }
+        switch (type) {
+            case COMMON -> cancelCommon(status);
+            case CONDITIONAL -> cancelConditional(status);
+            default -> throw new InvalidStepExecutionException();
+        }
+        updateCurrentStep(employeeAtProcess, status.getStep().getId(), status.getStep().getProcessId());
+    }
+
+    private Set<StepId> getNextSteps(UUID processId, int stepId) {
+        var transitionId = new TransitionId(stepId, processId);
+        Set<StepId> result = new HashSet<>();
+        if (commonTransitionRepository.existsById(transitionId)) {
+            int common = commonTransitionRepository.findById(transitionId)
+                    .orElseThrow(() -> new EntityNotFoundException(processId + " " + stepId)).getNextStepId();
+            result.add(new StepId(common, processId));
+        }
+        if (conditionalTransitionRepository.existsById(transitionId)) {
+            ConditionalTransition conditional = conditionalTransitionRepository.findById(transitionId)
+                    .orElseThrow(() -> new EntityNotFoundException(processId + " " + stepId));
+            result.add(new StepId(conditional.getPositiveStepId(), processId));
+            result.add(new StepId(conditional.getNegativeStepId(), processId));
+        }
+        return result;
+    }
+
+    private void cancelCommon(StepStatus status) {
+        status.setCompletedAt(null);
+        stepStatusRepository.save(status);
+    }
+
+    @Transactional
+    @Override
+    public void cancelSubstep(SubstepCancellationRequestDto request) {
+        SubstepStatus status = substepStatusRepository.findById(
+                new SubstepStatusId(request.employeeId(), request.startProcessId(), request.startProcessId()))
+                .orElseThrow(() -> new EntityNotFoundException(request.toString()));
+        status.setCompleted(false);
+        substepStatusRepository.save(status);
+        Step holder = status.getSubstep().getStep();
+        StepStatus holderStatus = stepStatusRepository.findById(
+                new StepStatusId(request.employeeId(), request.startProcessId(), holder.getProcessId(), holder.getId()))
+                .orElseThrow(() -> new EntityNotFoundException(request.toString()));
+        if (!holderStatus.getEmployeeAtProcess().getCurrentStep().getStepId().equals(holderStatus.getStep().getStepId()) &&
+                !getNextSteps(holderStatus.getProcessId(), holderStatus.getStepId()).contains(
+                holderStatus.getEmployeeAtProcess().getCurrentStep().getStepId())) {
+            throw new InvalidStepExecutionException();
+        }
+        if (holderStatus.getCompletedAt() != null) {
+            cancelCommon(holderStatus);
+            updateCurrentStep(holderStatus.getEmployeeAtProcess(), holderStatus.getStepId(), holderStatus.getProcessId());
+        }
+        status.setCompleted(false);
+        substepStatusRepository.save(status);
+    }
+
+    private void cancelConditional(StepStatus status) {
+        status.setCompletedAt(null);
+        Boolean branch = status.getIsSuccessful();
+        if (branch == null) {
+            throw new InvalidStepExecutionException();
+        }
+        ConditionalTransition transition = conditionalTransitionRepository.findById(new TransitionId(status.getStepId(), status.getProcessId()))
+                .orElseThrow();
+        int next = branch ? transition.getPositiveStepId() : transition.getNegativeStepId();
+        StepStatus current = stepStatusRepository.findById(new StepStatusId(status.getEmployeeId(), status.getStartProcessId(),
+                status.getProcessId(), next)).orElseThrow();
+        while (current != null) {
+            if (current.getStep().getType() == StepType.TRANSITION.getValue()) {
+                cancelCommon(current);
+                getSubstepsStatuses(current).forEach(s -> {
+                    SubstepStatusId substepStatusId = new SubstepStatusId(status.getEmployeeId(), status.getStartProcessId(),
+                            s.substepId());
+                    SubstepStatus substepStatus = substepStatusRepository.findById(substepStatusId).orElseThrow();
+                    substepStatus.setCompleted(false);
+                    substepStatusRepository.save(substepStatus);
+                });
+            }
+            current.setCompletedAt(null);
+            stepStatusRepository.save(current);
+            CommonTransition t = commonTransitionRepository.findById(new TransitionId(current.getStepId(), current.getProcessId()))
+                    .orElse(null);
+            if (t == null) {
+                current = null;
+            } else {
+                current = stepStatusRepository.findById(new StepStatusId(current.getEmployeeId(),
+                        current.getStartProcessId(), current.getProcessId(), t.getNextStepId()))
+                        .orElse(null);
+            }
+        }
     }
 
     private StepStatusDto mapToDto(StepStatus status) {

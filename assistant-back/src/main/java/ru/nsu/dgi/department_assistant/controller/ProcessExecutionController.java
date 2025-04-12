@@ -18,7 +18,9 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProc
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
@@ -111,5 +113,17 @@ public class ProcessExecutionController {
     @GetMapping("/pending")
     public ResponseEntity<List<ProcessTemplateShortDto>> getByEmployee(@RequestParam UUID employeeId) {
         return ResponseEntity.ok(processExecutionService.getByEmployee(employeeId));
+    }
+
+    @PostMapping("/step/cancel")
+    public ResponseEntity<Void> cancelStep(@RequestBody StepCancellationRequestDto request) {
+        processExecutionService.cancelStep(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/substep/cancel")
+    public ResponseEntity<Void> cancelSubstep(@RequestBody SubstepCancellationRequestDto request) {
+        processExecutionService.cancelSubstep(request);
+        return ResponseEntity.ok().build();
     }
 }

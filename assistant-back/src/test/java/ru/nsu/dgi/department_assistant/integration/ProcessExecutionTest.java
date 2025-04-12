@@ -97,6 +97,15 @@ class ProcessExecutionTest {
             }
             """;
 
+    private static final String STEP_CANCELLATION_JSON_FORMAT = """
+            {
+              "employeeId": "%s",
+              "startProcessId": "%s",
+              "processId": "%s",
+              "stepId": "%s"
+            }
+            """;
+
     @Test
     void executeSimpleProcess() throws Exception {
         UUID id = addSimpleProcess().id();
@@ -152,6 +161,15 @@ class ProcessExecutionTest {
         assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration()), commonStatus2.getDeadline());
         assertEquals(deadline.minusDays(commonStatus3.getStep().getDuration() +
                 commonStatus2.getStep().getDuration()), commonStatus1.getDeadline());
+
+        json = STEP_CANCELLATION_JSON_FORMAT.formatted(employeeId.toString(), commonStatus1.getStartProcessId(),
+                commonStatus1.getProcessId(), commonStatus1.getStepId());
+        mockMvc.perform(withJsonBody(json, BASE_URL + "/step/cancel"))
+                .andExpect(status().isOk());
+        statuses = stepStatusRepository.findAll();
+        statuses.sort(Comparator.comparingInt(StepStatus::getStepId));
+        commonStatus1 = statuses.get(1);
+        assertNull(commonStatus1.getCompletedAt());
     }
 
     @Test
