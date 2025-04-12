@@ -56,6 +56,7 @@ import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessTemplateService;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -99,6 +100,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                                         s.getCurrentStepProcessId(), s.getCurrentStepId());
                                 return mapToDto(stepStatusRepository.findById(stepStatusId).orElseThrow());
                             })
+                            .sorted(Comparator.comparing(StepStatusDto::deadline))
                             .toList();
                     return new ProcessExecutionStatusDto(e.getKey().processId(), e.getKey().name(), statuses);
                 })
