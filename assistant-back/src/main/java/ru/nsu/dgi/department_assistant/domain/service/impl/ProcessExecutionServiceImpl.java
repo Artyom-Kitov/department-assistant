@@ -279,6 +279,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 status.getEmployeeId(),
                 status.getProcessId(),
                 status.getStepId(),
+                status.getStep().getType(),
                 status.getStartProcessId(),
                 status.getDeadline(),
                 status.getCompletedAt(),
