@@ -263,8 +263,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 employeeAtProcess.getCurrentStepProcessId(), employeeAtProcess.getCurrentStepId()))
                 .orElseThrow();
         List<StepStatus> toComplete = statuses.stream()
-                .filter(s -> s.getCompletedAt() == null || s.getIsSuccessful() != null
-                        && !s.getFullId().equals(current.getFullId()))
+                .filter(s -> s.getCompletedAt() == null && !s.getFullId().equals(current.getFullId()))
                 .toList();
 
         return new EmployeeProcessExecutionDto(
