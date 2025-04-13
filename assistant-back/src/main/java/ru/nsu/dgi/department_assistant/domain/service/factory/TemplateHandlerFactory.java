@@ -5,6 +5,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.service.handler.DocxTemplateHandler;
 import ru.nsu.dgi.department_assistant.domain.service.handler.TemplateHandler;
+import ru.nsu.dgi.department_assistant.domain.service.handler.TxtTemplateHandler;
 
 @Service
 public class TemplateHandlerFactory {
@@ -18,6 +19,7 @@ public class TemplateHandlerFactory {
     public TemplateHandler getHandler(String templateType) {
         switch (templateType) {
             case "txt":
+                return applicationContext.getBean(TxtTemplateHandler.class);
             case "html":
             case "docx":
                 return applicationContext.getBean(DocxTemplateHandler.class);
