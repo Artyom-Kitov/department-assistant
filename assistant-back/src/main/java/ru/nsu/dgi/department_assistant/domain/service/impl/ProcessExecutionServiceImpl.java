@@ -49,6 +49,7 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.ExecutionHistor
 import ru.nsu.dgi.department_assistant.domain.repository.process.FinalTypeRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.ProcessTransitionRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.StepStatusRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepStatusRepository;
@@ -70,6 +71,7 @@ import java.util.stream.Collectors;
 public class ProcessExecutionServiceImpl implements ProcessExecutionService {
 
     private final ProcessTemplateService processTemplateService;
+    private final StepRepository stepRepository;
     private final ProcessGraphService processGraphService;
     private final ProcessSavingService processSavingService;
 
@@ -501,6 +503,11 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         LocalDate endDate = startDate != null ? startDate.plusDays(node.getDuration()) : null;
 
         StepStatus stepStatus = new StepStatus(employee.getId(), processId, node.getId(), startProcessId, endDate, null, null);
+        EmployeeAtProcess employeeAtProcess = employeeAtProcessRepository.findById(new EmployeeAtProcessId(employee.getId(),
+                startProcessId)).orElseThrow();
+        stepStatus.setEmployeeAtProcess(employeeAtProcess);
+        Step step = stepRepository.findById(new StepId(nodeId, processId)).orElseThrow();
+        stepStatus.setStep(step);
         if (node.getData() instanceof StartStepData) {
             stepStatus.setCompletedAt(LocalDate.now());
         }
