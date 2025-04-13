@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ConditionalExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProcessExecutionDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ExecutionHistoryDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.HistoryCleanupDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
@@ -23,6 +25,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecuted
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
+import ru.nsu.dgi.department_assistant.domain.service.ExecutionHistoryService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessExecutionService;
 
 import java.util.List;
@@ -38,6 +41,7 @@ import java.util.UUID;
 public class ProcessExecutionController {
 
     private final ProcessExecutionService processExecutionService;
+    private final ExecutionHistoryService historyService;
 
     @Operation(
             summary = "Get executed processes",
@@ -124,6 +128,22 @@ public class ProcessExecutionController {
     @PostMapping("/substep/cancel")
     public ResponseEntity<Void> cancelSubstep(@RequestBody SubstepCancellationRequestDto request) {
         processExecutionService.cancelSubstep(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<ExecutionHistoryDto>> getHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "") String orderBy,
+            @RequestParam(defaultValue = "true") boolean ascending
+    ) {
+        return ResponseEntity.ok(historyService.getHistory(page, size, orderBy, ascending));
+    }
+
+    @DeleteMapping("/history")
+    public ResponseEntity<Void> cleanHistory(@RequestBody HistoryCleanupDto request) {
+        historyService.clean(request);
         return ResponseEntity.ok().build();
     }
 }

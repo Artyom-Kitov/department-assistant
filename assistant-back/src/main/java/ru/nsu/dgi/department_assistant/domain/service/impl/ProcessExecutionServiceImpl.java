@@ -455,7 +455,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 InvalidStepExecutionException::new);
         LocalDate startedAt = employeeAtProcess.getStartedAt();
         ExecutionHistory history = new ExecutionHistory(UUID.randomUUID(), stepStatus.getEmployeeId(),
-                stepStatus.getStartProcessId(), startedAt, completedAt, isSuccessful, null, null);
+                stepStatus.getStartProcessId(), startedAt, completedAt, stepStatus.getStep().getDescription(),
+                isSuccessful, null, null);
         employeeAtProcessRepository.delete(employeeAtProcess);
         executionHistoryRepository.save(history);
     }

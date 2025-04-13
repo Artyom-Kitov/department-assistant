@@ -41,6 +41,9 @@ public class ExecutionHistory {
     @Column(name = "completed_at", nullable = false)
     private LocalDate completedAt;
 
+    @Column(name = "result", nullable = false)
+    private String result;
+
     @Column(name = "is_successful", nullable = false)
     private boolean isSuccessful;
 
