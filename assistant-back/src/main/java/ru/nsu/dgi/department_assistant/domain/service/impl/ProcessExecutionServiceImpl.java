@@ -263,7 +263,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 employeeAtProcess.getCurrentStepProcessId(), employeeAtProcess.getCurrentStepId()))
                 .orElseThrow();
         List<StepStatus> toComplete = statuses.stream()
-                .filter(s -> s.getCompletedAt() == null && !s.getFullId().equals(current.getFullId()))
+                .filter(s -> s.getCompletedAt() == null || s.getIsSuccessful() != null
+                        && !s.getFullId().equals(current.getFullId()))
                 .toList();
 
         return new EmployeeProcessExecutionDto(
@@ -367,9 +368,9 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                 .orElseThrow();
         int next = branch ? transition.getPositiveStepId() : transition.getNegativeStepId();
         StepStatus current = stepStatusRepository.findById(new StepStatusId(status.getEmployeeId(), status.getStartProcessId(),
-                status.getProcessId(), next)).orElseThrow();
+                status.getProcessId(), next)).orElse(null);
         while (current != null) {
-            if (current.getStep().getType() == StepType.TRANSITION.getValue()) {
+            if (current.getStep().getType() == StepType.SUBTASKS.getValue()) {
                 cancelCommon(current);
                 getSubstepsStatuses(current).forEach(s -> {
                     SubstepStatusId substepStatusId = new SubstepStatusId(status.getEmployeeId(), status.getStartProcessId(),
@@ -379,8 +380,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                     substepStatusRepository.save(substepStatus);
                 });
             }
-            current.setCompletedAt(null);
-            stepStatusRepository.save(current);
+            stepStatusRepository.deleteById(current.getFullId());
             CommonTransition t = commonTransitionRepository.findById(new TransitionId(current.getStepId(), current.getProcessId()))
                     .orElse(null);
             if (t == null) {
