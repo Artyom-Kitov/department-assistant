@@ -28,7 +28,7 @@ public class DocxTemplateHandler implements TemplateHandler<XWPFDocument> {
         XWPFDocument document;
         try {
             document = new XWPFDocument(inputStream);
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new InvalidDocumentException("Failed to read document from input stream", e);
         }
 

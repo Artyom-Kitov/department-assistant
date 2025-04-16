@@ -15,7 +15,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final TemplateHandlerDispatcherServiceImpl templateProcessingService;
     private final FileServiceImpl fileService;
 
-public byte[] fillAndConvertTemplate(Long templateId, UUID employeeId){
+    @Override
+    public byte[] fillAndConvertTemplate(Long templateId, UUID employeeId){
     XWPFDocument document = templateProcessingService.processTemplate(templateId, employeeId);
 
     return fileService.convertToBytes(document);

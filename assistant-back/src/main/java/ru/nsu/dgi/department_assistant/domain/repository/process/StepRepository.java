@@ -7,8 +7,10 @@ import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepId;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface StepRepository extends JpaRepository<Step, StepId> {
     List<Step> findAllByProcessId(UUID processId);
+
 }

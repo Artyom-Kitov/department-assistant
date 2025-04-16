@@ -1,12 +1,13 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import java.util.Arrays;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.Optional;
 
 @Service
 public class CookieServiceImpl{

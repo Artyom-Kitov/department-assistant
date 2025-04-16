@@ -1,6 +1,5 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -8,6 +7,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -28,6 +28,9 @@ public class JwtTokenProviderServiceImpl {
 
     @Value("${jwt.refreshExpiration}")
     private long jwtRefreshExpirationMs;
+
+    @Value("${jwt.refreshThreshold}")
+    private long jwtRefreshThresholdMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -68,6 +71,25 @@ public class JwtTokenProviderServiceImpl {
         }
     }
 
+    public boolean isTokenExpiringSoon(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            Date expiration = claims.getExpiration();
+            Date now = new Date();
+            long timeUntilExpiration = expiration.getTime() - now.getTime();
+
+            return timeUntilExpiration <= jwtRefreshThresholdMs;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("Error checking token expiration: {}", e.getMessage());
+            return false;
+        }
+    }
+
     public String getEmailFromToken(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -95,4 +117,3 @@ public class JwtTokenProviderServiceImpl {
                 .get("roles", String.class));
     }
 }
-
