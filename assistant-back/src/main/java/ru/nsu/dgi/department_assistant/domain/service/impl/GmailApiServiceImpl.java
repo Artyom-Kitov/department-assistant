@@ -7,8 +7,6 @@ import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Properties;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -26,9 +24,9 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.dto.documents.EmailResponse;
-import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.exception.EmailServiceException;
 import ru.nsu.dgi.department_assistant.domain.service.GmailApiService;
+import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
 
 @Slf4j
 @Service
@@ -36,33 +34,16 @@ import ru.nsu.dgi.department_assistant.domain.service.GmailApiService;
 public class GmailApiServiceImpl implements GmailApiService {
 
     private final OAuth2AuthorizedClientService authorizedClientService;
+    private final SecurityService securityService;
 
     @Override
     public EmailResponse sendEmail(MimeMessage message) {
         try {
-            // Get the authenticated user's email
-            String userEmail = getUserEmail();
-            if (userEmail == null) {
-                return new EmailResponse(false, null, "User email not found");
-            }
+            String userEmail = securityService.getCurrentUserEmail();
+            OAuth2AuthorizedClient client = getAuthorizedClient(userEmail);
+            Gmail gmailService = initializeGmailService(client.getAccessToken().getTokenValue());
             
-            // Load the OAuth2 authorized client
-            OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", userEmail);
-            if (client == null) {
-                return new EmailResponse(false, null, "OAuth2 authorization not found. Please authenticate with Google.");
-            }
-            
-            OAuth2AccessToken accessToken = client.getAccessToken();
-            Gmail gmailService = initializeGmailService(accessToken.getTokenValue());
-            
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            message.writeTo(buffer);
-            byte[] bytes = buffer.toByteArray();
-            String encodedEmail = Base64.getUrlEncoder().encodeToString(bytes);
-            
-            Message gmailMessage = new Message();
-            gmailMessage.setRaw(encodedEmail);
-            
+            Message gmailMessage = createGmailMessage(message);
             Message sentMessage = gmailService.users().messages().send("me", gmailMessage).execute();
             
             log.info("Email sent successfully with ID: {}", sentMessage.getId());
@@ -76,32 +57,12 @@ public class GmailApiServiceImpl implements GmailApiService {
     @Override
     public String createDraft(MimeMessage message) {
         try {
-            // Get the authenticated user's email
-            String userEmail = getUserEmail();
-            if (userEmail == null) {
-                throw new EmailServiceException("User email not found");
-            }
+            String userEmail = securityService.getCurrentUserEmail();
+            OAuth2AuthorizedClient client = getAuthorizedClient(userEmail);
+            Gmail gmailService = initializeGmailService(client.getAccessToken().getTokenValue());
             
-            // Load the OAuth2 authorized client
-            OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", userEmail);
-            if (client == null) {
-                throw new EmailServiceException("OAuth2 authorization not found. Please authenticate with Google.");
-            }
-            
-            OAuth2AccessToken accessToken = client.getAccessToken();
-            Gmail gmailService = initializeGmailService(accessToken.getTokenValue());
-            
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            message.writeTo(buffer);
-            byte[] bytes = buffer.toByteArray();
-            String encodedEmail = Base64.getUrlEncoder().encodeToString(bytes);
-            
-            Message gmailMessage = new Message();
-            gmailMessage.setRaw(encodedEmail);
-            
-            Draft draft = new Draft();
-            draft.setMessage(gmailMessage);
-            
+            Message gmailMessage = createGmailMessage(message);
+            Draft draft = new Draft().setMessage(gmailMessage);
             Draft createdDraft = gmailService.users().drafts().create("me", draft).execute();
             
             log.info("Draft created successfully with ID: {}", createdDraft.getId());
@@ -112,28 +73,24 @@ public class GmailApiServiceImpl implements GmailApiService {
         }
     }
 
-
+    @Override
     public String updateMimeMessage(String encodedEmail, String from, String to, String subject) {
         try {
-            // Decode the MIME message
-            byte[] emailBytes = Base64.getUrlDecoder().decode(encodedEmail);
-            Session session = Session.getDefaultInstance(new Properties(), null);
-            MimeMessage message = new MimeMessage(session, new ByteArrayInputStream(emailBytes));
-            
-            // Update sender and recipient data
-            message.setFrom(from);
-            message.setRecipients(MimeMessage.RecipientType.TO, to);
-            message.setSubject(subject);
-            
-            // Encode the updated MIME message
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            message.writeTo(buffer);
-            byte[] bytes = buffer.toByteArray();
-            return Base64.getUrlEncoder().encodeToString(bytes);
+            MimeMessage message = decodeMimeMessage(encodedEmail);
+            updateMessageHeaders(message, from, to, subject);
+            return encodeMimeMessage(message);
         } catch (Exception e) {
             log.error("Failed to update MIME message", e);
             throw new EmailServiceException("Failed to update MIME message", e);
         }
+    }
+    
+    private OAuth2AuthorizedClient getAuthorizedClient(String userEmail) {
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", userEmail);
+        if (client == null) {
+            throw new EmailServiceException("OAuth2 authorization not found. Please authenticate with Google.");
+        }
+        return client;
     }
     
     private Gmail initializeGmailService(String accessToken) throws GeneralSecurityException, IOException {
@@ -148,13 +105,34 @@ public class GmailApiServiceImpl implements GmailApiService {
                 .setApplicationName("Department Assistant")
                 .build();
     }
-    
-    private String getUserEmail() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User) {
-            CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
-            return user.getEmail();
-        }
-        return null;
+
+    private Message createGmailMessage(MimeMessage message) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        message.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        String encodedEmail = Base64.getUrlEncoder().encodeToString(bytes);
+        
+        Message gmailMessage = new Message();
+        gmailMessage.setRaw(encodedEmail);
+        return gmailMessage;
+    }
+
+    private MimeMessage decodeMimeMessage(String encodedEmail) throws Exception {
+        byte[] emailBytes = Base64.getUrlDecoder().decode(encodedEmail);
+        Session session = Session.getDefaultInstance(new Properties(), null);
+        return new MimeMessage(session, new ByteArrayInputStream(emailBytes));
+    }
+
+    private void updateMessageHeaders(MimeMessage message, String from, String to, String subject) throws Exception {
+        message.setFrom(from);
+        message.setRecipients(MimeMessage.RecipientType.TO, to);
+        message.setSubject(subject);
+    }
+
+    private String encodeMimeMessage(MimeMessage message) throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        message.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        return Base64.getUrlEncoder().encodeToString(bytes);
     }
 } 

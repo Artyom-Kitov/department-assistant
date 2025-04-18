@@ -9,9 +9,23 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ru.nsu.dgi.department_assistant.domain.exception.FileServiceException;
+import ru.nsu.dgi.department_assistant.domain.service.TemplateHandlerDispatcherService;
+
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
+
+    private final TemplateHandlerDispatcherService templateHandlerDispatcherService;
 
     @Override
     public byte[] convertToBytes(Object document) {
@@ -45,4 +59,44 @@ public class FileServiceImpl implements FileService {
         return Files.readAllBytes(filePath); 
     }
 
+    @Override
+    public byte[] createZipArchive(List<Long> templateIds, Long employeeId, List<MultipartFile> uploadedFiles) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
+            
+            // Add template files
+            for (Long templateId : templateIds) {
+                addTemplateToZip(zos, templateId, employeeId);
+            }
+            
+            // Add uploaded files
+            for (MultipartFile file : uploadedFiles) {
+                addUploadedFileToZip(zos, file);
+            }
+            
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Failed to create zip archive", e);
+            throw new FileServiceException("Failed to create zip archive", e);
+        }
+    }
+
+    @Override
+    public void addFileToZip(ZipOutputStream zos, String filename, byte[] content) throws IOException {
+        ZipEntry entry = new ZipEntry(filename);
+        zos.putNextEntry(entry);
+        zos.write(content);
+        zos.closeEntry();
+    }
+
+    @Override
+    public void addTemplateToZip(ZipOutputStream zos, Long templateId, Long employeeId) throws IOException {
+        String processedContent = templateHandlerDispatcherService.processTemplate(templateId, employeeId);
+        addFileToZip(zos, templateId + ".txt", processedContent.getBytes());
+    }
+
+    @Override
+    public void addUploadedFileToZip(ZipOutputStream zos, MultipartFile file) throws IOException {
+        addFileToZip(zos, file.getOriginalFilename(), file.getBytes());
+    }
 }

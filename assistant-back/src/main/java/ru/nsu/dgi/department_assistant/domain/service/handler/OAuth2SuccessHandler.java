@@ -2,6 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.service.handler;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -17,6 +18,7 @@ import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.service.impl.AuthServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.service.impl.CookieServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.service.impl.JwtTokenProviderServiceImpl;
+import ru.nsu.dgi.department_assistant.domain.service.impl.OAuth2TokenRefreshService;
 
 @Slf4j
 @Component
@@ -27,6 +29,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final CookieServiceImpl cookieService;
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final AuthServiceImpl authService;
+    private final OAuth2TokenRefreshService oauth2Service;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -37,8 +40,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = tokenProvider.generateAccessToken(user);
         String refreshToken = tokenProvider.generateRefreshToken(user);
 
-        cookieService.addCookie(response, "accessToken", accessToken, 60 * 15); // 15 мин
-        cookieService.addCookie(response, "refreshToken", refreshToken, 60 * 60 * 24 * 7); // 7 дней
+        cookieService.addAccessTokenCookie(response, accessToken);
+        cookieService.addRefreshTokenCookie(response, refreshToken);
 
         // Store OAuth2 authorization for Gmail API
         if (authentication instanceof OAuth2AuthenticationToken) {
@@ -52,19 +55,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
                 if (currentClient != null) {
                     // Save OAuth2 tokens in cookies
-                    if (currentClient.getAccessToken() != null) {
-                        cookieService.addCookie(response, "oauth2_access_token",
-                                currentClient.getAccessToken().getTokenValue(),
-                                60 * 60); // 1 hour
-                        log.info("OAuth2 access token saved in cookies for user: {}", user.getEmail());
-                    }
-
-                    if (currentClient.getRefreshToken() != null) {
-                        cookieService.addCookie(response, "oauth2_refresh_token",
-                                currentClient.getRefreshToken().getTokenValue(),
-                                60 * 60 * 24 * 7); // 7 days
-                        log.info("OAuth2 refresh token saved in cookies for user: {}", user.getEmail());
-                    }
+                    oauth2Service.updateTokensInCookies(response, 
+                        currentClient.getAccessToken(), 
+                        currentClient.getRefreshToken());
 
                     // Save the authorized client
                     authorizedClientService.saveAuthorizedClient(currentClient, oauth2Token);

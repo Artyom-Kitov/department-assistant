@@ -1,23 +1,32 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import java.util.Date;
+import java.util.Optional;
 
 import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
-import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
+import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
+import ru.nsu.dgi.department_assistant.domain.service.impl.CookieServiceImpl;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtTokenProviderServiceImpl {
 
     @Value("${jwt.secret}")
@@ -31,6 +40,9 @@ public class JwtTokenProviderServiceImpl {
 
     @Value("${jwt.refreshThreshold}")
     private long jwtRefreshThresholdMs;
+
+    private final CookieServiceImpl cookieService;
+    private final SecurityService securityService;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -87,6 +99,68 @@ public class JwtTokenProviderServiceImpl {
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Error checking token expiration: {}", e.getMessage());
             return false;
+        }
+    }
+
+    @Scheduled(fixedRateString = "${jwt.refreshCheckInterval}")
+    public void checkAndRefreshTokens() {
+        log.debug("Starting scheduled JWT token refresh check");
+        refreshTokens();
+    }
+
+    public void refreshTokens() {
+        try {
+            ServletRequestAttributes attributes = getRequestAttributes();
+            if (attributes == null) {
+                return;
+            }
+
+            HttpServletRequest request = attributes.getRequest();
+            HttpServletResponse response = attributes.getResponse();
+            if (response == null) {
+                return;
+            }
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User) {
+                CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
+                processTokenRefresh(request, response, user);
+            }
+        } catch (Exception e) {
+            log.error("Error during token refresh: {}", e.getMessage(), e);
+        }
+    }
+
+    private ServletRequestAttributes getRequestAttributes() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            log.debug("No active request context, skipping token refresh");
+        }
+        return attributes;
+    }
+
+    private void processTokenRefresh(HttpServletRequest request, HttpServletResponse response, CustomOAuth2User user) {
+        Optional<String> refreshToken = cookieService.getRefreshTokenFromCookies(request);
+        if (refreshToken.isPresent() && validateToken(refreshToken.get())) {
+            String email = getEmailFromToken(refreshToken.get());
+            CustomOAuth2User authUser = securityService.createCustomOAuth2User(
+                securityService.getUserFromDatabase(email),
+                email
+            );
+            refreshAccessTokenIfNeeded(request, response, authUser);
+        } else {
+            log.warn("Invalid or missing refresh token for user: {}", user.getEmail());
+        }
+    }
+
+    private void refreshAccessTokenIfNeeded(HttpServletRequest request, HttpServletResponse response, CustomOAuth2User user) {
+        Optional<String> accessToken = cookieService.getAccessTokenFromCookies(request);
+        if (accessToken.isPresent() && isTokenExpiringSoon(accessToken.get())) {
+            String email = user.getEmail();
+            log.info("JWT access token for user {} is expiring soon, refreshing...", email);
+            String newAccessToken = generateAccessToken(user);
+            cookieService.addAccessTokenCookie(response, newAccessToken);
+            log.info("Successfully refreshed JWT access token for user: {}", email);
         }
     }
 
