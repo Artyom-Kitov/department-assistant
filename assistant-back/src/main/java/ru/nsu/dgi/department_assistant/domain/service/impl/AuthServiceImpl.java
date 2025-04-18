@@ -91,52 +91,75 @@ public class AuthServiceImpl {
     }
 
     private void restoreOAuth2Client(String email, CustomOAuth2User user, String accessTokenValue, String refreshTokenValue) {
-        // Get the Google client registration
+        ClientRegistration googleRegistration = getGoogleClientRegistration();
+        OAuth2AccessToken accessToken = createOAuth2AccessToken(accessTokenValue);
+        OAuth2RefreshToken refreshToken = createOAuth2RefreshToken(refreshTokenValue);
+        OAuth2AuthorizedClient client = createOAuth2AuthorizedClient(googleRegistration, email, accessToken, refreshToken);
+        OAuth2AuthenticationToken oauth2Token = createOAuth2AuthenticationToken(user, email);
+        
+        authorizedClientService.saveAuthorizedClient(client, oauth2Token);
+    }
+
+    private ClientRegistration getGoogleClientRegistration() {
         ClientRegistration googleRegistration = clientRegistrationRepository.findByRegistrationId("google");
         if (googleRegistration == null) {
             throw new RuntimeException("Google client registration not found");
         }
+        return googleRegistration;
+    }
 
-        // Create OAuth2AccessToken
-        OAuth2AccessToken accessToken = new OAuth2AccessToken(
+    private OAuth2AccessToken createOAuth2AccessToken(String accessTokenValue) {
+        return new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
                 accessTokenValue,
                 Instant.now(),
                 Instant.now().plusSeconds(3600));
+    }
 
-        // Create OAuth2RefreshToken if available
-        OAuth2RefreshToken refreshToken = null;
-        if (refreshTokenValue != null) {
-            refreshToken = new OAuth2RefreshToken(refreshTokenValue, Instant.now());
+    private OAuth2RefreshToken createOAuth2RefreshToken(String refreshTokenValue) {
+        if (refreshTokenValue == null) {
+            return null;
         }
+        return new OAuth2RefreshToken(refreshTokenValue, Instant.now());
+    }
 
-        // Create OAuth2AuthorizedClient
-        OAuth2AuthorizedClient client = new OAuth2AuthorizedClient(
-                googleRegistration,
+    private OAuth2AuthorizedClient createOAuth2AuthorizedClient(
+            ClientRegistration registration,
+            String email,
+            OAuth2AccessToken accessToken,
+            OAuth2RefreshToken refreshToken) {
+        return new OAuth2AuthorizedClient(
+                registration,
                 email,
                 accessToken,
                 refreshToken);
+    }
 
-        // Create OAuth2AuthenticationToken
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("email", email);
-        attributes.put("name", user.getName());
-        attributes.put("sub", email);
-
-        DefaultOAuth2User oauth2User = new DefaultOAuth2User(
-                user.getAuthorities(),
-                attributes,
-                "email"
-        );
-
-        OAuth2AuthenticationToken oauth2Token = new OAuth2AuthenticationToken(
+    private OAuth2AuthenticationToken createOAuth2AuthenticationToken(CustomOAuth2User user, String email) {
+        Map<String, Object> attributes = createOAuth2UserAttributes(user, email);
+        DefaultOAuth2User oauth2User = createDefaultOAuth2User(user, attributes);
+        
+        return new OAuth2AuthenticationToken(
                 oauth2User,
                 user.getAuthorities(),
                 "google"
         );
+    }
 
-        // Save the client
-        authorizedClientService.saveAuthorizedClient(client, oauth2Token);
+    private Map<String, Object> createOAuth2UserAttributes(CustomOAuth2User user, String email) {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("email", email);
+        attributes.put("name", user.getName());
+        attributes.put("sub", email);
+        return attributes;
+    }
+
+    private DefaultOAuth2User createDefaultOAuth2User(CustomOAuth2User user, Map<String, Object> attributes) {
+        return new DefaultOAuth2User(
+                user.getAuthorities(),
+                attributes,
+                "email"
+        );
     }
 
     public Map<String, Object> getOAuth2Status(HttpServletRequest request) {
@@ -147,37 +170,12 @@ public class AuthServiceImpl {
             CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
             String email = user.getEmail();
 
-            // Check OAuth2 tokens in cookies
-            Optional<String> oauth2AccessToken = cookieService.extractTokenFromCookies(request, "oauth2_access_token");
-            Optional<String> oauth2RefreshToken = cookieService.extractTokenFromCookies(request, "oauth2_refresh_token");
-
+            Map<String, Object> oauth2Info = getOAuth2Info(request, email);
+            
             response.put("authenticated", true);
             response.put("email", email);
             response.put("name", user.getName());
             response.put("role", user.getRole().name());
-
-            // Check if OAuth2 authorization exists in service
-            OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", email);
-
-            Map<String, Object> oauth2Info = new HashMap<>();
-            oauth2Info.put("hasAccessToken", oauth2AccessToken.isPresent());
-            oauth2Info.put("hasRefreshToken", oauth2RefreshToken.isPresent());
-
-            if (client != null) {
-                OAuth2AccessToken accessToken = client.getAccessToken();
-                Instant expiresAt = accessToken.getExpiresAt();
-                boolean isExpired = expiresAt != null && expiresAt.isBefore(Instant.now());
-
-                oauth2Info.put("authorized", true);
-                oauth2Info.put("expired", isExpired);
-                oauth2Info.put("expiresAt", expiresAt);
-                oauth2Info.put("tokenType", accessToken.getTokenType().getValue());
-                oauth2Info.put("scopes", accessToken.getScopes());
-            } else {
-                oauth2Info.put("authorized", false);
-                oauth2Info.put("message", "No OAuth2 authorization found in service");
-            }
-
             response.put("oauth2Info", oauth2Info);
         } else {
             response.put("authenticated", false);
@@ -188,5 +186,37 @@ public class AuthServiceImpl {
         }
 
         return response;
+    }
+
+    private Map<String, Object> getOAuth2Info(HttpServletRequest request, String email) {
+        Map<String, Object> oauth2Info = new HashMap<>();
+        
+        Optional<String> oauth2AccessToken = cookieService.extractTokenFromCookies(request, "oauth2_access_token");
+        Optional<String> oauth2RefreshToken = cookieService.extractTokenFromCookies(request, "oauth2_refresh_token");
+
+        oauth2Info.put("hasAccessToken", oauth2AccessToken.isPresent());
+        oauth2Info.put("hasRefreshToken", oauth2RefreshToken.isPresent());
+
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", email);
+        if (client != null) {
+            addClientInfoToResponse(oauth2Info, client);
+        } else {
+            oauth2Info.put("authorized", false);
+            oauth2Info.put("message", "No OAuth2 authorization found in service");
+        }
+
+        return oauth2Info;
+    }
+
+    private void addClientInfoToResponse(Map<String, Object> oauth2Info, OAuth2AuthorizedClient client) {
+        OAuth2AccessToken accessToken = client.getAccessToken();
+        Instant expiresAt = accessToken.getExpiresAt();
+        boolean isExpired = expiresAt != null && expiresAt.isBefore(Instant.now());
+
+        oauth2Info.put("authorized", true);
+        oauth2Info.put("expired", isExpired);
+        oauth2Info.put("expiresAt", expiresAt);
+        oauth2Info.put("tokenType", accessToken.getTokenType().getValue());
+        oauth2Info.put("scopes", accessToken.getScopes());
     }
 }
