@@ -6,7 +6,7 @@ import org.mapstruct.factory.Mappers;
 import ru.nsu.dgi.department_assistant.domain.dto.user.UserDto;
 import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 

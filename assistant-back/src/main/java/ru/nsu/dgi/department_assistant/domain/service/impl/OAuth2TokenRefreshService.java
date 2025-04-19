@@ -2,6 +2,7 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,12 +30,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
-import org.springframework.security.oauth2.core.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
+import ru.nsu.dgi.department_assistant.domain.repository.auth.UserRepository;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OAuth2TokenRefreshService {
+    private final UserRepository userRepository;
     private static final String GOOGLE_REGISTRATION_ID = "google";
     
     private final OAuth2AuthorizedClientService authorizedClientService;
@@ -48,23 +52,34 @@ public class OAuth2TokenRefreshService {
     @Value("${oauth2.refreshThreshold}")
     private long refreshThreshold;
 
+
     @Scheduled(fixedRateString = "${oauth2.refreshCheckInterval}")
     public void checkAndRefreshTokens() {
         log.debug("Starting scheduled OAuth2 token refresh check");
-        
-        // Get all authorized clients
-        Map<String, OAuth2AuthorizedClient> clients = authorizedClientService.loadAuthorizedClients();
-        
-        for (Map.Entry<String, OAuth2AuthorizedClient> entry : clients.entrySet()) {
-            String email = entry.getKey();
-            OAuth2AuthorizedClient client = entry.getValue();
-            
-            if (client != null && isTokenExpiringSoon(client.getAccessToken())) {
-                log.info("Token for user {} is expiring soon, refreshing...", email);
-                OAuth2AccessToken newToken = refreshAccessToken(email);
-                if (newToken != null) {
-                    log.info("Successfully refreshed token for user: {}", email);
+        List<Users> users = userRepository.findAll();
+
+        for (Users user : users) {
+            try {
+                String email = user.getEmail();
+                OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(GOOGLE_REGISTRATION_ID, email);
+
+                if (client == null) {
+                    log.debug("No OAuth2 client found for user: {}", email);
+                    continue;
                 }
+
+                OAuth2AccessToken accessToken = client.getAccessToken();
+                if (accessToken == null) {
+                    log.debug("No access token found for user: {}", email);
+                    continue;
+                }
+
+                if (isTokenExpiringSoon(accessToken)) {
+                    log.info("OAuth2 access token for user {} is expiring soon, refreshing...", email);
+                    refreshAccessToken(email);
+                }
+            } catch (Exception e) {
+                log.error("Failed to refresh OAuth2 tokens for user: {}", user.getEmail(), e);
             }
         }
     }
@@ -84,9 +99,6 @@ public class OAuth2TokenRefreshService {
         }
 
         ClientRegistration registration = getGoogleClientRegistration();
-        if (registration == null) {
-            return null;
-        }
 
         OAuth2AccessTokenResponse response = requestTokenRefresh(registration, refreshToken);
         if (response == null) {
@@ -159,8 +171,7 @@ public class OAuth2TokenRefreshService {
 
     public void restoreOAuth2Authorization(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User) {
-            CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User user) {
             String email = user.getEmail();
 
             if (authorizedClientService.loadAuthorizedClient(GOOGLE_REGISTRATION_ID, email) != null) {
@@ -170,9 +181,7 @@ public class OAuth2TokenRefreshService {
             Optional<String> oauth2AccessToken = cookieService.getOAuth2AccessTokenFromCookies(request);
             Optional<String> oauth2RefreshToken = cookieService.getOAuth2RefreshTokenFromCookies(request);
 
-            if (oauth2AccessToken.isPresent()) {
-                restoreOAuth2Client(email, user, oauth2AccessToken.get(), oauth2RefreshToken.orElse(null));
-            }
+            oauth2AccessToken.ifPresent(s -> restoreOAuth2Client(email, user, s, oauth2RefreshToken.orElse(null)));
         }
     }
 
@@ -252,8 +261,7 @@ public class OAuth2TokenRefreshService {
         Map<String, Object> response = new HashMap<>();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User) {
-            CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User user) {
             String email = user.getEmail();
 
             Map<String, Object> oauth2Info = getOAuth2Info(request, email);

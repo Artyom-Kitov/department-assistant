@@ -15,7 +15,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.user.UserDto;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
 import ru.nsu.dgi.department_assistant.domain.mapper.UserMapper;
-import ru.nsu.dgi.department_assistant.domain.repository.UserRepository;
+import ru.nsu.dgi.department_assistant.domain.repository.auth.UserRepository;
 import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
 
 /**

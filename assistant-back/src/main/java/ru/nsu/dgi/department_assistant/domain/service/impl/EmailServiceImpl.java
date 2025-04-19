@@ -1,27 +1,20 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Properties;
-
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.dto.documents.EmailRequest;
 import ru.nsu.dgi.department_assistant.domain.dto.documents.EmailResponse;
 import ru.nsu.dgi.department_assistant.domain.exception.EmailServiceException;
-import ru.nsu.dgi.department_assistant.domain.service.ContactsService;
-import ru.nsu.dgi.department_assistant.domain.service.EmailService;
-import ru.nsu.dgi.department_assistant.domain.service.FileService;
-import ru.nsu.dgi.department_assistant.domain.service.GmailApiService;
-import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
-import ru.nsu.dgi.department_assistant.domain.service.TemplateHandlerDispatcherService;
+import ru.nsu.dgi.department_assistant.domain.service.*;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
 
 @Slf4j
 @Service
@@ -32,7 +25,7 @@ public class EmailServiceImpl implements EmailService {
     private final GmailApiService gmailApiService;
     private final ContactsService contactsService;
     private final SecurityService securityService;
-    private final FileService fileService;
+    private final ZipServiceImpl zipService;
 
     @Override
     public EmailResponse sendEmail(EmailRequest request) {
@@ -74,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
             addAttachmentsIfNeeded(message, request);
             
             return message;
-        } catch (MessagingException e) {
+        } catch (MessagingException | IOException e) {
             log.error("Failed to create MIME message", e);
             throw new EmailServiceException("Failed to create MIME message", e);
         }
@@ -98,7 +91,7 @@ public class EmailServiceImpl implements EmailService {
 
     private void addAttachmentsIfNeeded(MimeMessage message, EmailRequest request) throws MessagingException, IOException {
         if (hasAttachments(request)) {
-            byte[] zipBytes = fileService.createZipArchive(
+            byte[] zipBytes = zipService.createZipArchive(
                 request.attachmentTemplateIds(),
                 request.employeeId(),
                 request.uploadedFiles()

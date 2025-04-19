@@ -1,10 +1,14 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import java.util.Date;
-import java.util.Optional;
-
-import javax.crypto.SecretKey;
-
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
@@ -12,17 +16,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
+import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
 import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
-import ru.nsu.dgi.department_assistant.domain.service.impl.CookieServiceImpl;
+
+import javax.crypto.SecretKey;
+import java.util.Date;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -111,19 +111,12 @@ public class JwtTokenProviderServiceImpl {
     public void refreshTokens() {
         try {
             ServletRequestAttributes attributes = getRequestAttributes();
-            if (attributes == null) {
-                return;
-            }
 
             HttpServletRequest request = attributes.getRequest();
             HttpServletResponse response = attributes.getResponse();
-            if (response == null) {
-                return;
-            }
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User) {
-                CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
+            if (authentication != null && authentication.getPrincipal() instanceof CustomOAuth2User user) {
                 processTokenRefresh(request, response, user);
             }
         } catch (Exception e) {
@@ -132,11 +125,7 @@ public class JwtTokenProviderServiceImpl {
     }
 
     private ServletRequestAttributes getRequestAttributes() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null) {
-            log.debug("No active request context, skipping token refresh");
-        }
-        return attributes;
+        return (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
     }
 
     private void processTokenRefresh(HttpServletRequest request, HttpServletResponse response, CustomOAuth2User user) {

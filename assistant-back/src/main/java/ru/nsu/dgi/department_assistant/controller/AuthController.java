@@ -24,9 +24,9 @@ public class AuthController {
     private final AuthServiceImpl authService;
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
         try {
-            authService.refreshToken(request, response);
+            authService.refreshToken(request);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());

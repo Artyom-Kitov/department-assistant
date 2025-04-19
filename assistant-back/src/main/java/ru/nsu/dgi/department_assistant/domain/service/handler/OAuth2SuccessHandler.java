@@ -1,24 +1,22 @@
 package ru.nsu.dgi.department_assistant.domain.service.handler;
 
-import java.io.IOException;
-
-import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.service.impl.AuthServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.service.impl.CookieServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.service.impl.JwtTokenProviderServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.service.impl.OAuth2TokenRefreshService;
+
+import java.io.IOException;
 
 @Slf4j
 @Component
@@ -44,9 +42,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         cookieService.addRefreshTokenCookie(response, refreshToken);
 
         // Store OAuth2 authorization for Gmail API
-        if (authentication instanceof OAuth2AuthenticationToken) {
-            OAuth2AuthenticationToken oauth2Token = (OAuth2AuthenticationToken) authentication;
-            
+        if (authentication instanceof OAuth2AuthenticationToken oauth2Token) {
+
             try {
                 // First save the authorized client from the authentication
                 OAuth2AuthorizedClient currentClient = authorizedClientService.loadAuthorizedClient(

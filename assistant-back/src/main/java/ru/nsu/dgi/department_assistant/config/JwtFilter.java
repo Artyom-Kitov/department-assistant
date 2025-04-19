@@ -56,7 +56,7 @@ public class JwtFilter extends OncePerRequestFilter {
             } else if (refreshToken != null && jwtTokenProviderService.validateToken(refreshToken)) {
                 // JWT access token невалиден, но есть валидный refresh token
                 try {
-                    authService.refreshToken(request, response);
+                    authService.refreshToken(request);
                     log.info("JWT token refreshed successfully");
                     accessToken = extractTokenFromCookies(request, "accessToken");
                     if (accessToken != null) {

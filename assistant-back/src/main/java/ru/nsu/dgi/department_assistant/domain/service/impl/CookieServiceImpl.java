@@ -1,17 +1,15 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import java.util.Arrays;
-import java.util.Optional;
-
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -37,10 +35,10 @@ public class CookieServiceImpl {
     private int accessTokenMaxAge;
 
     @Value("${jwt.refreshExpiration}")
-    private int refreshTokenMaxAge;
+    private long refreshTokenMaxAge;
 
 
-    public void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
+    public void addCookie(HttpServletResponse response, String name, String value, long maxAge) {
         String cookieHeader = String.format("%s=%s; Path=/; %s; %s; Max-Age=%d; SameSite=%s",
                 name, value,
                 cookieHttpOnly ? "HttpOnly" : "",

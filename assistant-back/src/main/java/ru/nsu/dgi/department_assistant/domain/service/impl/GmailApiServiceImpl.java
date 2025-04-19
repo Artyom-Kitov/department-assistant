@@ -1,32 +1,30 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.Base64;
-import java.util.Properties;
-
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.stereotype.Service;
-
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Draft;
 import com.google.api.services.gmail.model.Message;
-
+import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.dto.documents.EmailResponse;
 import ru.nsu.dgi.department_assistant.domain.exception.EmailServiceException;
 import ru.nsu.dgi.department_assistant.domain.service.GmailApiService;
 import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Base64;
+import java.util.Properties;
 
 @Slf4j
 @Service
@@ -73,7 +71,7 @@ public class GmailApiServiceImpl implements GmailApiService {
         }
     }
 
-    @Override
+
     public String updateMimeMessage(String encodedEmail, String from, String to, String subject) {
         try {
             MimeMessage message = decodeMimeMessage(encodedEmail);
@@ -94,9 +92,7 @@ public class GmailApiServiceImpl implements GmailApiService {
     }
     
     private Gmail initializeGmailService(String accessToken) throws GeneralSecurityException, IOException {
-        HttpRequestInitializer requestInitializer = request -> {
-            request.getHeaders().setAuthorization("Bearer " + accessToken);
-        };
+        HttpRequestInitializer requestInitializer = request -> request.getHeaders().setAuthorization("Bearer " + accessToken);
         
         return new Gmail.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
@@ -106,7 +102,7 @@ public class GmailApiServiceImpl implements GmailApiService {
                 .build();
     }
 
-    private Message createGmailMessage(MimeMessage message) throws IOException {
+    private Message createGmailMessage(MimeMessage message) throws IOException, MessagingException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         message.writeTo(buffer);
         byte[] bytes = buffer.toByteArray();
