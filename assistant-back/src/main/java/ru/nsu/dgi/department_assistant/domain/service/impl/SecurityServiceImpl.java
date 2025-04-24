@@ -1,9 +1,9 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import ru.nsu.dgi.department_assistant.domain.dto.user.UserDto;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
+import ru.nsu.dgi.department_assistant.domain.exception.TokenRefreshException;
 import ru.nsu.dgi.department_assistant.domain.mapper.UserMapper;
 import ru.nsu.dgi.department_assistant.domain.repository.auth.UserRepository;
 import ru.nsu.dgi.department_assistant.domain.service.SecurityService;
@@ -63,17 +64,43 @@ public class SecurityServiceImpl implements SecurityService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return userMapper.toDto(user);
     }
+    public Collection<GrantedAuthority> createAuthorities(UserDto userDto) {
+        return Collections.singleton(
+                new SimpleGrantedAuthority("ROLE_" + userDto.getRole().name())
+        );
+    }
 
     @Override
     public CustomOAuth2User createCustomOAuth2User(UserDto userDto, String email) {
         return new CustomOAuth2User(
                 new DefaultOAuth2User(
-                        List.of(new SimpleGrantedAuthority("ROLE_" + userDto.getRole().name())),
+                        createAuthorities(userDto),
                         Map.of("email", email),
                         "email"
                 ),
                 userDto.getId(),
                 userDto.getRole()
         );
+    }
+
+    public UserDto findOrCreateUser(String email, String name) {
+        Users user = userRepository.findByEmail(email)
+                .orElseGet(() -> createNewUser(email, name));
+        log.info("User found/created in DB with role: {}", user.getRole());
+        return userMapper.toDto(user);
+    }
+
+    public UserDto findUserByEmail(String email) {
+        return userMapper.toDto(userRepository.findByEmail(email)
+                .orElseThrow(() -> new TokenRefreshException("User not found: " + email)));
+    }
+
+
+    public Users createNewUser(String email, String name) {
+        Users newUser = new Users();
+        newUser.setEmail(email);
+        newUser.setName(name);
+        newUser.setRole(Users.Role.ADMIN);
+        return userRepository.save(newUser);
     }
 } 
