@@ -3,6 +3,7 @@ package ru.nsu.dgi.department_assistant.domain.service.impl;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -13,72 +14,75 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CookieServiceImpl {
-    private static final String ACCESS_TOKEN_COOKIE = "accessToken";
-    private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
+    // Константы для имен куки
     private static final String OAUTH2_ACCESS_TOKEN_COOKIE = "oauth2_access_token";
     private static final String OAUTH2_REFRESH_TOKEN_COOKIE = "oauth2_refresh_token";
 
-    @Value("${cookie.domain}")
-    private String cookieDomain;
+    // Константы для времени жизни куки
+    private static final int OAUTH2_ACCESS_TOKEN_MAX_AGE = 3600;  // 1 hour
+    private static final int OAUTH2_REFRESH_TOKEN_MAX_AGE = 7200; // 2 hours
 
-    @Value("${cookie.secure}")
-    private boolean cookieSecure;
+    /**
+     * Добавляет OAuth2 токены в куки
+     */
+    public void addOAuth2TokensToCookies(HttpServletResponse response,
+                                         OAuth2AccessToken accessToken,
+                                         OAuth2RefreshToken refreshToken) {
+        log.debug("Adding OAuth2 tokens to cookies");
 
-    @Value("${cookie.same-site}")
-    private String cookieSameSite;
+        validateTokens(accessToken, refreshToken);
 
-    @Value("${cookie.http-only}")
-    private boolean cookieHttpOnly;
+        // Access Token
+        Cookie accessTokenCookie = createSecureCookie(
+                OAUTH2_ACCESS_TOKEN_COOKIE,
+                accessToken.getTokenValue(),
+                OAUTH2_ACCESS_TOKEN_MAX_AGE
+        );
+        response.addCookie(accessTokenCookie);
+        log.debug("Added OAuth2 access token cookie");
 
-    @Value("${jwt.expiration}")
-    private int accessTokenMaxAge;
-
-    @Value("${jwt.refreshExpiration}")
-    private long refreshTokenMaxAge;
-
-
-    public void addCookie(HttpServletResponse response, String name, String value, long maxAge) {
-        String cookieHeader = String.format("%s=%s; Path=/; %s; %s; Max-Age=%d; SameSite=%s",
-                name, value,
-                cookieHttpOnly ? "HttpOnly" : "",
-                cookieSecure ? "Secure" : "",
-                maxAge,
-                cookieSameSite);
-
-        if (cookieDomain != null && !cookieDomain.isEmpty()) {
-            cookieHeader += "; Domain=" + cookieDomain;
-        }
-
-        response.addHeader("Set-Cookie", cookieHeader);
-    }
-
-    public void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(name)) {
-                    String cookieHeader = String.format("%s=; Path=/; %s; %s; Max-Age=0; SameSite=%s",
-                            name,
-                            cookieHttpOnly ? "HttpOnly" : "",
-                            cookieSecure ? "Secure" : "",
-                            cookieSameSite);
-
-                    if (cookieDomain != null && !cookieDomain.isEmpty()) {
-                        cookieHeader += "; Domain=" + cookieDomain;
-                    }
-
-                    response.addHeader("Set-Cookie", cookieHeader);
-                }
-            }
+        // Refresh Token
+        if (refreshToken != null && refreshToken.getTokenValue() != null) {
+            Cookie refreshTokenCookie = createSecureCookie(
+                    OAUTH2_REFRESH_TOKEN_COOKIE,
+                    refreshToken.getTokenValue(),
+                    OAUTH2_REFRESH_TOKEN_MAX_AGE
+            );
+            response.addCookie(refreshTokenCookie);
+            log.debug("Added OAuth2 refresh token cookie");
         }
     }
 
-    public Optional<String> extractTokenFromCookies(HttpServletRequest request, String cookieName) {
+    /**
+     * Получает OAuth2 access token из куки
+     */
+    public Optional<String> getOAuth2AccessTokenFromCookies(HttpServletRequest request) {
+        return extractTokenFromCookies(request, OAUTH2_ACCESS_TOKEN_COOKIE);
+    }
+
+    /**
+     * Получает OAuth2 refresh token из куки
+     */
+    public Optional<String> getOAuth2RefreshTokenFromCookies(HttpServletRequest request) {
+        return extractTokenFromCookies(request, OAUTH2_REFRESH_TOKEN_COOKIE);
+    }
+
+    private Cookie createSecureCookie(String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(maxAge);
+        return cookie;
+    }
+
+    private Optional<String> extractTokenFromCookies(HttpServletRequest request, String cookieName) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(cookieName)) {
+                if (cookieName.equals(cookie.getName())) {
                     return Optional.of(cookie.getValue());
                 }
             }
@@ -86,43 +90,32 @@ public class CookieServiceImpl {
         return Optional.empty();
     }
 
-    public void addAccessTokenCookie(HttpServletResponse response, String token) {
-        addCookie(response, ACCESS_TOKEN_COOKIE, token, accessTokenMaxAge);
-    }
-
-    public void addRefreshTokenCookie(HttpServletResponse response, String token) {
-        addCookie(response, REFRESH_TOKEN_COOKIE, token, refreshTokenMaxAge);
-    }
-
-    public void addOAuth2TokensToCookies(HttpServletResponse response, OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
-        if (accessToken != null) {
-            addCookie(response, OAUTH2_ACCESS_TOKEN_COOKIE, accessToken.getTokenValue(), accessTokenMaxAge);
+    private void validateTokens(OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
+        if (accessToken == null) {
+            log.error("Attempt to add null access token to cookies");
+            throw new IllegalArgumentException("accessToken cannot be null");
         }
-        if (refreshToken != null) {
-            addCookie(response, OAUTH2_REFRESH_TOKEN_COOKIE, refreshToken.getTokenValue(), refreshTokenMaxAge);
+
+        if (accessToken.getTokenValue() == null) {
+            log.error("Access token has null token value");
+            throw new IllegalArgumentException("access token value cannot be null");
         }
     }
 
-    public Optional<String> getAccessTokenFromCookies(HttpServletRequest request) {
-        return extractTokenFromCookies(request, ACCESS_TOKEN_COOKIE);
-    }
-
-    public Optional<String> getRefreshTokenFromCookies(HttpServletRequest request) {
-        return extractTokenFromCookies(request, REFRESH_TOKEN_COOKIE);
-    }
-
-    public Optional<String> getOAuth2AccessTokenFromCookies(HttpServletRequest request) {
-        return extractTokenFromCookies(request, OAUTH2_ACCESS_TOKEN_COOKIE);
-    }
-
-    public Optional<String> getOAuth2RefreshTokenFromCookies(HttpServletRequest request) {
-        return extractTokenFromCookies(request, OAUTH2_REFRESH_TOKEN_COOKIE);
-    }
-
-    public void deleteAllAuthCookies(HttpServletRequest request, HttpServletResponse response) {
-        deleteCookie(request, response, ACCESS_TOKEN_COOKIE);
-        deleteCookie(request, response, REFRESH_TOKEN_COOKIE);
+    /**
+     * Удаляет все OAuth2 куки
+     */
+    public void deleteOAuth2Cookies(HttpServletRequest request, HttpServletResponse response) {
         deleteCookie(request, response, OAUTH2_ACCESS_TOKEN_COOKIE);
         deleteCookie(request, response, OAUTH2_REFRESH_TOKEN_COOKIE);
+    }
+
+    private void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
+        Cookie cookie = new Cookie(name, "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 }

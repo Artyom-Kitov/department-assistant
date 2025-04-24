@@ -13,10 +13,12 @@ public interface UserMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "email", source = "email")
     @Mapping(target = "role", source = "role")
+    @Mapping(target = "name", source = "name")
     UserDto toDto(Users user);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "email", source = "email")
     @Mapping(target = "role", source = "role")
+    @Mapping(target = "name", source = "name")
     Users toEntity(UserDto userDto);
 } 

@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.service.impl.DocumentServiceImpl;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
 
 import java.util.UUID;
+
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 
@@ -57,5 +60,37 @@ public class DocumentController {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(resource);
         }
+        @Operation(
+                summary = "Заполнить шаблон с контекстом шага процесса",
+                description = "Заполняет шаблон данными сотрудника и контекстом шага процесса"
+            )
+            @ApiResponses(
+                value = {
+                    @ApiResponse(
+                        responseCode = "200",
+                        description = "Документ успешно заполнен с контекстом шага"
+                    ),
+                    @ApiResponse(
+                        responseCode = "400",
+                        description = "Неверные данные для заполнения"
+                    ),
+                    @ApiResponse(
+                        responseCode = "404",
+                        description = "Шаблон, сотрудник или данные шага не найдены"
+                    )
+                }
+            )
+            @PostMapping("/fill-with-step")
+            public ResponseEntity<Resource> generateDocumentWithStep(
+                @RequestParam Long templateId,
+                @RequestBody StepExecutedDto stepContext
+            ) {
+                byte[] bytes = documentService.fillAndConvertTemplateWithStepContext(templateId, stepContext);
+                ByteArrayResource resource = new ByteArrayResource(bytes);
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=document.docx")
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(resource);
+            }
     }
 

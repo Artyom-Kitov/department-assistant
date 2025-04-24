@@ -11,5 +11,17 @@ import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
 public class UserDto {
     private Long id;
     private String email;
+    private String name;
+
     private Users.Role role;
+    public static UserDto fromUser(Users user) {
+        return new UserDto(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getRole()
+        );
+    }
+
+
 } 

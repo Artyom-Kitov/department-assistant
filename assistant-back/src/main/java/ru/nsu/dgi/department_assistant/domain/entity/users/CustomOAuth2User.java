@@ -8,42 +8,47 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class CustomOAuth2User implements OAuth2User {
-    private final OAuth2User oauth2User;
-    private final Long id;
-    private final Users.Role role;
 
-    public CustomOAuth2User(OAuth2User oauth2User, Long id, Users.Role role) {
-        this.oauth2User = oauth2User;
-        this.id = id;
-        this.role = role;
-    }
+    public class CustomOAuth2User implements OAuth2User {
+        private final OAuth2User oauth2User;
+        private final Long id;
+        private final Users.Role role;
 
-    @Override
-    public Map<String, Object> getAttributes() {
-        return oauth2User.getAttributes();
-    }
+        public CustomOAuth2User(OAuth2User oauth2User, Long id, Users.Role role) {
+            this.oauth2User = oauth2User;
+            this.id = id;
+            this.role = role;
+        }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-    }
+        @Override
+        public Map<String, Object> getAttributes() {
+            return oauth2User.getAttributes();
+        }
 
-    @Override
-    public String getName() {
-        return oauth2User.getAttribute("name");
-    }
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        }
 
-    public String getEmail() {
-        return oauth2User.getAttribute("email");
-    }
+        @Override
+        public String getName() {
+            return getEmail(); // Теперь возвращаем email вместо имени!
+        }
 
-    public Long getId() {
-        return id;
-    }
+        public String getEmail() {
+            return oauth2User.getAttribute("email");
+        }
 
-    public Users.Role getRole() {
-        return role;
+        public String getDisplayName() {  // Добавим отдельный метод для получения имени
+            return oauth2User.getAttribute("name");
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public Users.Role getRole() {
+            return role;
+        }
     }
-}
 

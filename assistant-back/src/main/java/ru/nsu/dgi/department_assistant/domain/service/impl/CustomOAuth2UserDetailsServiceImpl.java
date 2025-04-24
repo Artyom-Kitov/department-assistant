@@ -30,7 +30,7 @@ public class CustomOAuth2UserDetailsServiceImpl extends DefaultOAuth2UserService
         Users newUser = new Users();
         newUser.setEmail(oauthUser.getAttribute("email"));
         newUser.setName(oauthUser.getAttribute("name"));
-        newUser.setRole(Users.Role.USER); // Дефолтная роль USER
+        newUser.setRole(Users.Role.ADMIN); // Дефолтная роль USER
         return userRepository.save(newUser);
     }
 }
