@@ -145,10 +145,10 @@ export const updateContactsForEmployee = async (
 ): Promise<Contacts> => {
   try {
     const response = await apiClient.put(
-      `/contacts/update/employee`, 
+      `/contacts/update/employee`,
       contacts,
       {
-        params: { employeeId }, 
+        params: { employeeId },
       }
     );
     return response.data;
@@ -575,17 +575,6 @@ export const deleteTemplate = async (id: string): Promise<void> => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
 //-------------------------- ВЫПОЛНЕНИЕ ПРОЦЕССА -------------------------------
 
 export const executeSubstep = async (
@@ -594,53 +583,17 @@ export const executeSubstep = async (
   substepId: string
 ): Promise<void> => {
   try {
-    const response = await apiClient.post("/execute/substep", {
+    const response = await apiClient.post("/execution/substep", {
       employeeId,
       startProcessId,
       substepId,
     });
+    
+    console.log('Выполнен подшаг!', "employeeId: ", employeeId, "startProcessId: ", startProcessId, "substepId: ", substepId);
     return response.data;
   } catch (error) {
     console.error(
       `Error executing substep for employee with ID ${employeeId}:`,
-      error
-    );
-    throw error;
-  }
-};
-
-export const executeSubstepStatuses = async (
-  processId: string,
-  employeeId: string
-): Promise<void> => {
-  try {
-    const response = await apiClient.post("/execute/substep/statuses", {
-      processId,
-      employeeId,
-    });
-    return response.data;
-  } catch (error) {
-    console.error(
-      `Error fetching substep statuses for process ID ${processId}:`,
-      error
-    );
-    throw error;
-  }
-};
-
-export const executeStatuses = async (
-  processId: string,
-  employeeId: string
-): Promise<void> => {
-  try {
-    const response = await apiClient.post("/execute/statuses", {
-      processId,
-      employeeId,
-    });
-    return response.data;
-  } catch (error) {
-    console.error(
-      `Error fetching statuses for process ID ${processId}:`,
       error
     );
     throw error;
@@ -653,7 +606,7 @@ export const startProcess = async (
   deadline: string
 ): Promise<void> => {
   try {
-    const response = await apiClient.post("/execute/start", {
+    const response = await apiClient.post("/execution/start", {
       employeeId,
       processId,
       deadline,
@@ -676,13 +629,14 @@ export const executeConditional = async (
   successful: boolean
 ): Promise<void> => {
   try {
-    const response = await apiClient.post("/execute/conditional", {
+    const response = await apiClient.post("/execution/conditional", {
       employeeId,
       startProcessId,
       processId,
       stepId,
       successful,
     });
+    console.log('Выполнено условие ', successful);
     return response.data;
   } catch (error) {
     console.error(
@@ -700,12 +654,13 @@ export const executeCommon = async (
   stepId: number
 ): Promise<void> => {
   try {
-    const response = await apiClient.post("/execute/common", {
+    const response = await apiClient.post("/execution/common", {
       employeeId,
       startProcessId,
       processId,
       stepId,
     });
+    console.log('Выполнен шаг!');
     return response.data;
   } catch (error) {
     console.error(
@@ -721,7 +676,8 @@ export const cancelProcess = async (
   processId: string
 ): Promise<void> => {
   try {
-    const response = await apiClient.delete("/execute/cancel", {
+    console.log('Отмена процесса!');
+    const response = await apiClient.delete("/execution/cancel", {
       data: { employeeId, processId },
     });
     return response.data;
@@ -730,6 +686,145 @@ export const cancelProcess = async (
       `Error canceling process for employee with ID ${employeeId}:`,
       error
     );
+    throw error;
+  }
+};
+
+export const getEmployeeExecutionStatus = async (
+  employeeId: string,
+  processId: string
+): Promise<any> => {
+  try {
+    const response = await apiClient.get("/execution/employee", {
+      params: { employeeId, processId },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error retrieving execution status for employee with ID ${employeeId} and process ID ${processId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+export const getAllExecutionStatuses = async (): Promise<any> => {
+  try {
+    const response = await apiClient.get("/execution/all");
+    return response.data;
+  } catch (error) {
+    console.error("Error retrieving all execution statuses:", error);
+    throw error;
+  }
+};
+
+export const getPendingExecutions = async (
+  employeeId: string
+): Promise<any> => {
+  try {
+    const response = await apiClient.get("/execution/pending", {
+      params: { employeeId },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error retrieving pending executions for employee with ID ${employeeId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+// New method to cancel a step
+export const cancelStep = async (
+  employeeId: string,
+  startProcessId: string,
+  processId: string,
+  stepId: number
+): Promise<void> => {
+  try {
+    console.log('Отменен шаг!');
+    const response = await apiClient.post("/execution/step/cancel", {
+      employeeId,
+      startProcessId,
+      processId,
+      stepId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error canceling step for employee with ID ${employeeId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+// New method to cancel a substep
+export const cancelSubstep = async (
+  employeeId: string,
+  startProcessId: string,
+  substepId: string
+): Promise<void> => {
+  try {
+    console.log('Отменен подшаг!');
+    const response = await apiClient.post("/execution/substep/cancel", {
+      employeeId,
+      startProcessId,
+      substepId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error canceling substep for employee with ID ${employeeId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+
+
+
+// HISTORY
+
+interface HistoryProcess {
+  id: string;
+  employeeId: string;
+  processId: string;
+  startedAt: string;
+  completedAt: string;
+  result: string;
+  isSuccessful: boolean;
+}
+
+// Function to get execution history
+export const getExecutionHistory = async (
+  page: number = 0,
+  size: number = 100,
+  orderBy: string = "startedAt",
+  ascending: boolean = true
+): Promise<HistoryProcess[]> => {
+  try {
+    const response = await apiClient.get('/execution/history', {
+      params: { page, size, orderBy, ascending },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching execution history:", error);
+    throw error;
+  }
+};
+
+// Function to delete execution history
+export const deleteHistory = async (historyIds: string[]): Promise<void> => {
+  try {
+    const response = await apiClient.delete('/execution/history', {
+      data: { historyIds },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting execution history:", error);
     throw error;
   }
 };
