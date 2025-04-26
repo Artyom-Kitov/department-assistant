@@ -5,6 +5,7 @@ import { FaUserLarge } from "react-icons/fa6";
 import { IoIosArrowDown, IoIosClose } from "react-icons/io";
 import { HiArrowsUpDown } from "react-icons/hi2";
 import { VscSettings } from "react-icons/vsc";
+import { CiCirclePlus } from "react-icons/ci";
 import { getEmployeesInfo, createEmployee, Employee } from "@/api";
 import { FaPlus } from "react-icons/fa6";
 
@@ -139,14 +140,7 @@ export default function EmployeesPage() {
           </div>
 
           <button
-            className="flex items-center space-x-2 bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300"
-            onClick={() => setShowFilters(true)}
-          >
-            <VscSettings className="text-lg text-gray-700" />
-            <span>Фильтры</span>
-          </button>
-          <button
-            className="ml-4 flex items-center space-x-2 bg-[#4fff9e] text-gray-700 px-4 py-2 rounded-md hover:bg-green-400"
+            className=" flex items-center space-x-2 bg-[#4fff9e] text-gray-700 px-4 py-2 rounded-md hover:bg-green-400"
             onClick={() => setShowAddEmployeeDialog(true)}
           >
             <FaPlus className="text-lg" />
@@ -204,17 +198,10 @@ export default function EmployeesPage() {
               >
                 <IoIosClose className="text-2xl" />
               </button>
-              <h3 className="text-lg font-semibold mb-4">Добавить сотрудника</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                Добавить сотрудника
+              </h3>
               <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Имя"
-                  value={newEmployee.firstName}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, firstName: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-md"
-                />
                 <input
                   type="text"
                   placeholder="Фамилия"
@@ -226,10 +213,26 @@ export default function EmployeesPage() {
                 />
                 <input
                   type="text"
+                  placeholder="Имя"
+                  value={newEmployee.firstName}
+                  onChange={(e) =>
+                    setNewEmployee({
+                      ...newEmployee,
+                      firstName: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border rounded-md"
+                />
+
+                <input
+                  type="text"
                   placeholder="Отчество (необязательно)"
                   value={newEmployee.middleName || ""}
                   onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, middleName: e.target.value })
+                    setNewEmployee({
+                      ...newEmployee,
+                      middleName: e.target.value,
+                    })
                   }
                   className="w-full px-4 py-2 border rounded-md"
                 />
@@ -248,9 +251,11 @@ export default function EmployeesPage() {
         <div className="w-full max-w-4xl mt-4">
           {loading && <div>Loading...</div>}
           {!loading && filteredEmployees.length === 0 && (
-            <div>
-              Нет сотрудников в списке, добавьте с помощью "Добавить
-              сотрудника".
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <CiCirclePlus className="text-6xl mb-4" />
+              <p>
+                Нет сотрудников в списке, добавьте с помощью "Добавить сотрудника"
+              </p>
             </div>
           )}
           {!loading && filteredEmployees.length > 0 && (
@@ -263,7 +268,10 @@ export default function EmployeesPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <Link to={`/employees/currentemployee?id=${employee.id}`} state={{ employee }}>
+                    <Link
+                      to={`/employees/currentemployee?id=${employee.id}`}
+                      state={{ employee }}
+                    >
                       <div className="flex items-center cursor-pointer">
                         <div className="flex-shrink-0 bg-gray-300 p-2 rounded-md">
                           <FaUserLarge className="text-gray-600" />
@@ -280,9 +288,7 @@ export default function EmployeesPage() {
                       <IoIosArrowDown
                         onClick={() => toggleExpand(employee.id)}
                         className={`text-xl text-gray-500 transition-transform duration-300 cursor-pointer ${
-                          expanded.has(employee.id)
-                            ? "rotate-180"
-                            : "rotate-0"
+                          expanded.has(employee.id) ? "rotate-180" : "rotate-0"
                         }`}
                       />
                     </div>
@@ -305,7 +311,7 @@ export default function EmployeesPage() {
                         state={{ employee }}
                         className="text-gray-500 underline ml-4"
                       >
-                        Подробнее 
+                        Подробнее
                       </Link>
                     </div>
                     <div
@@ -378,7 +384,8 @@ export default function EmployeesPage() {
                           <p>
                             Дата получения:{" "}
                             {
-                              employee.certificateOfNoCriminalRecord?.dateOfReceipt
+                              employee.certificateOfNoCriminalRecord
+                                ?.dateOfReceipt
                             }
                           </p>
                           <p>

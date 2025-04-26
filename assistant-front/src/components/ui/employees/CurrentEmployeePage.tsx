@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import Navbar from "../Navbar";
 import { Link, useLocation } from "react-router-dom";
 import { FaUserLarge } from "react-icons/fa6";
+import { IoAnalyticsOutline } from "react-icons/io5";
 import { FaArrowLeft } from "react-icons/fa";
 import { MdContentCopy } from "react-icons/md";
+
+import { getPendingExecutions } from "@/api";
 
 export default function CurrentEmployeePage() {
   const location = useLocation();
   const employee = location.state?.employee;
   const [copied, setCopied] = useState<"phone" | "email" | null>(null);
+  const [processes, setProcesses] = useState<any[]>([]);
 
   if (!employee) return <div>Employee data not found.</div>;
 
@@ -28,7 +32,14 @@ export default function CurrentEmployeePage() {
     return value ?? "-";
   };
 
-  useEffect(() => console.log("fldldffd: ", employee), [])
+  useEffect(() => {
+    const fetchProcesses = async () => {
+      const processes = await getPendingExecutions(employee.id);
+      setProcesses(processes);
+    };
+
+    fetchProcesses();
+  }, [employee.id]);
 
   return (
     <div>
@@ -84,12 +95,13 @@ export default function CurrentEmployeePage() {
               </div>
               <div className="flex justify-between items-center mt-2">
                 <p className="text-sm text-gray-500">
-                  NSU E-mail: {getDisplayValue(employee.contacts?.nsuEmail) || "-"}
+                  NSU E-mail:{" "}
+                  {getDisplayValue(employee.contacts?.nsuEmail) || "-"}
                 </p>
                 <MdContentCopy
                   className="cursor-pointer text-gray-500"
                   onClick={() =>
-                    handleCopy(employee.contacts?.email ?? "", "email")
+                    handleCopy(employee.contacts?.nsuEmail ?? "", "email")
                   }
                 />
               </div>
@@ -103,16 +115,25 @@ export default function CurrentEmployeePage() {
               <h3 className="text-lg font-semibold text-gray-600 mb-2">
                 Процессы
               </h3>
-              <ol>
-                {/* TODO: Заполнить список процессов, в которых участвует сотрудник */}
-                <li className="mt-4 w-full bg-gray-300 p-2 rounded-lg">
-                  Процесс 1
-                </li>
-                <li className="mt-4 w-full bg-gray-300 p-2 rounded-lg">
-                  Процесс 2
-                </li>
-                {/* Добавьте больше элементов списка по мере необходимости */}
-              </ol>
+              {processes.length > 0 ? (
+                <ol>
+                  {processes.map((process) => (
+                    <Link to={`/processes`} state={{ process }}>
+                      <li
+                        key={process.id}
+                        className="flex items-center mt-4 w-full bg-gray-100 p-2 rounded-lg"
+                      >
+                        <div className="bg-gray-300 p-2 rounded-md mr-2">
+                          <IoAnalyticsOutline className="text-gray-600" />
+                        </div>
+                        {process.name}
+                      </li>
+                    </Link>
+                  ))}
+                </ol>
+              ) : (
+                <p>Нет текущих процессов</p>
+              )}
             </div>
           </div>
 

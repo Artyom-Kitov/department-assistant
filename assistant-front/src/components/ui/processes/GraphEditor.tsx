@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -154,7 +154,7 @@ export default function GraphEditor({ code, setCode, processName }) {
                     ...baseStep,
                     type: 4,
                     duration: 0,
-                    description: "Без описания",
+                    description: node.type === "Negative End" ? "Отклонено" : "Успешно завершено",
                     data: {
                         isSuccessful: node.type === "Positive End",
                     },
