@@ -260,7 +260,7 @@ public class OAuth2TokenRefreshService {
         Optional<String> accessToken = cookieService.getOAuth2AccessTokenFromCookies(request);
 
         if (accessToken.isPresent()) {
-            processAccessToken(accessToken.get(), request, response);
+            processAccessToken(accessToken.get(), response);
         } else {
             processRefreshToken(request, response);
         }
@@ -279,7 +279,7 @@ public class OAuth2TokenRefreshService {
         refreshToken.ifPresent(s -> processRefreshTokenValue(s, response));
     }
 
-    private void processAccessToken(String accessToken, HttpServletRequest request, HttpServletResponse response) {
+    private void processAccessToken(String accessToken, HttpServletResponse response) {
         OAuth2AuthorizedClient client = findAuthorizedClientByToken(accessToken);
 
         if (client != null) {
@@ -298,7 +298,6 @@ public class OAuth2TokenRefreshService {
         log.debug("Access token is expiring soon, attempting refresh");
         OAuth2AccessToken newToken = refreshAccessToken(email, response);
         if (newToken != null) {
-            OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", email);
             authenticationService.updateSecurityContext(email);
         }
     }
@@ -313,7 +312,6 @@ public class OAuth2TokenRefreshService {
 
                 OAuth2AccessToken newToken = refreshAccessToken(email, response);
                 if (newToken != null) {
-                    client = authorizedClientService.loadAuthorizedClient("google", email);
                     authenticationService.updateSecurityContext(email);
                     log.info("Successfully refreshed access token using refresh token");
                 }

@@ -15,82 +15,90 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.nsu.dgi.department_assistant.domain.service.impl.DocumentServiceImpl;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.service.impl.FileStorageService;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.RequestBody;
-
-
 
 @RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
 public class DocumentController {
 
-        private final DocumentServiceImpl documentService;
+    private final DocumentServiceImpl documentService;
+    private final FileStorageService fileStorageService;
 
-        @Operation(
-                summary = "Заполнить шаблон данными сотрудника",
-                description = "Заполняет шаблон данными сотрудника и возвращает документ"
-        )
-        @ApiResponses(
-                value = {
-                        @ApiResponse(
-                                responseCode = "200",
-                                description = "Документ успешно заполнен"
-                        ),
-                        @ApiResponse(
-                                responseCode = "400",
-                                description = "Неверные данные для заполнения"
-                        ),
-                        @ApiResponse(
-                                responseCode = "404",
-                                description = "Шаблон или сотрудник с указанным ID не найден"
-                        )
-                }
-        )
-        @PostMapping("/fill")
-        public ResponseEntity<Resource> fillTemplate(
-                @RequestParam Long templateId,
-                @RequestParam UUID employeeId) {
-            byte[] bytes = documentService.fillAndConvertTemplate(templateId,employeeId);
-            ByteArrayResource resource = new ByteArrayResource(bytes);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=document.docx")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(resource);
-        }
-        @Operation(
-                summary = "Заполнить шаблон с контекстом шага процесса",
-                description = "Заполняет шаблон данными сотрудника и контекстом шага процесса"
-            )
-            @ApiResponses(
-                value = {
+    @Operation(
+            summary = "Заполнить шаблон данными сотрудника",
+            description = "Заполняет шаблон данными сотрудника и возвращает документ"
+    )
+    @ApiResponses(
+            value = {
                     @ApiResponse(
-                        responseCode = "200",
-                        description = "Документ успешно заполнен с контекстом шага"
+                            responseCode = "200",
+                            description = "Документ успешно заполнен"
                     ),
                     @ApiResponse(
-                        responseCode = "400",
-                        description = "Неверные данные для заполнения"
+                            responseCode = "400",
+                            description = "Неверные данные для заполнения"
                     ),
                     @ApiResponse(
-                        responseCode = "404",
-                        description = "Шаблон, сотрудник или данные шага не найдены"
+                            responseCode = "404",
+                            description = "Шаблон или сотрудник с указанным ID не найден"
                     )
-                }
-            )
-            @PostMapping("/fill-with-step")
-            public ResponseEntity<Resource> generateDocumentWithStep(
-                @RequestParam Long templateId,
-                @RequestBody StepExecutedDto stepContext
-            ) {
-                byte[] bytes = documentService.fillAndConvertTemplateWithStepContext(templateId, stepContext);
-                ByteArrayResource resource = new ByteArrayResource(bytes);
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=document.docx")
-                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                        .body(resource);
             }
+    )
+    @PostMapping("/fill")
+    public ResponseEntity<Resource> fillTemplate(
+            @RequestParam Long templateId,
+            @RequestParam UUID employeeId) {
+        byte[] bytes = documentService.fillAndConvertTemplate(templateId, employeeId);
+        ByteArrayResource resource = new ByteArrayResource(bytes);
+        String filename = fileStorageService.getFileNameById(templateId) + "." + fileStorageService.getFileExtensionById(templateId);
+        String asciiFilename = filename.replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + asciiFilename + "\"; filename*=UTF-8''" + encodedFilename)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
+
+    @Operation(
+            summary = "Заполнить шаблон с контекстом шага процесса",
+            description = "Заполняет шаблон данными сотрудника и контекстом шага процесса"
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Документ успешно заполнен с контекстом шага"
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Неверные данные для заполнения"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Шаблон, сотрудник или данные шага не найдены"
+                    )
+            }
+    )
+    @PostMapping("/fill-with-step")
+    public ResponseEntity<Resource> generateDocumentWithStep(
+            @RequestParam Long templateId,
+            @RequestBody StepExecutedDto stepContext) {
+        byte[] bytes = documentService.fillAndConvertTemplateWithStepContext(templateId, stepContext);
+        ByteArrayResource resource = new ByteArrayResource(bytes);
+        String filename = fileStorageService.getFileNameById(templateId) + "." + fileStorageService.getFileExtensionById(templateId);
+        String asciiFilename = filename.replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + asciiFilename + "\"; filename*=UTF-8''" + encodedFilename)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
+    }
+}
 

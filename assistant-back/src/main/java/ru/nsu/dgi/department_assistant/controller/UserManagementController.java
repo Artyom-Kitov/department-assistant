@@ -1,17 +1,13 @@
 package ru.nsu.dgi.department_assistant.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.dgi.department_assistant.domain.dto.user.RoleUpdateRequest;
 import ru.nsu.dgi.department_assistant.domain.dto.user.UserDto;
 import ru.nsu.dgi.department_assistant.domain.entity.users.Users;
 import ru.nsu.dgi.department_assistant.domain.repository.auth.UserRepository;
-import ru.nsu.dgi.department_assistant.domain.service.impl.AuthServiceImpl;
 
 import java.util.List;
 import java.util.stream.Collectors;

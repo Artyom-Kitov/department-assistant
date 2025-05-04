@@ -20,7 +20,7 @@ public class TxtTemplateHandler implements TemplateHandler<String> {
     private final TemplateProcessingService templateProcessingService;
     
     @Override
-    public String handleTemplate(InputStream inputStream, Map<String, String> data) throws IOException {
+    public String handleTemplate(InputStream inputStream, Map<String, String> data){
         if (inputStream == null) {
             throw new IllegalArgumentException("Input stream cannot be null");
         }

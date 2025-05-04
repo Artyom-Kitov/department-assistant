@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,7 @@ public class CookieServiceImpl {
                                          OAuth2RefreshToken refreshToken) {
         log.debug("Adding OAuth2 tokens to cookies");
 
-        validateTokens(accessToken, refreshToken);
+        validateAccessToken(accessToken);
 
         // Access Token
         Cookie accessTokenCookie = createSecureCookie(
@@ -90,7 +89,7 @@ public class CookieServiceImpl {
         return Optional.empty();
     }
 
-    private void validateTokens(OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
+    private void validateAccessToken(OAuth2AccessToken accessToken) {
         if (accessToken == null) {
             log.error("Attempt to add null access token to cookies");
             throw new IllegalArgumentException("accessToken cannot be null");
@@ -105,12 +104,12 @@ public class CookieServiceImpl {
     /**
      * Удаляет все OAuth2 куки
      */
-    public void deleteOAuth2Cookies(HttpServletRequest request, HttpServletResponse response) {
-        deleteCookie(request, response, OAUTH2_ACCESS_TOKEN_COOKIE);
-        deleteCookie(request, response, OAUTH2_REFRESH_TOKEN_COOKIE);
+    public void deleteOAuth2Cookies(HttpServletResponse response) {
+        deleteCookie(response, OAUTH2_ACCESS_TOKEN_COOKIE);
+        deleteCookie(response, OAUTH2_REFRESH_TOKEN_COOKIE);
     }
 
-    private void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
+    private void deleteCookie(HttpServletResponse response, String name) {
         Cookie cookie = new Cookie(name, "");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);

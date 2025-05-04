@@ -7,54 +7,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
-import ru.nsu.dgi.department_assistant.domain.repository.auth.UserRepository;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-//@Service
-//@RequiredArgsConstructor
-//public class AuthServiceImpl {
-//
-//    private final JwtTokenProviderServiceImpl tokenProvider;
-//    private final CookieServiceImpl cookieService;
-//    private final OAuth2TokenRefreshService oauth2Service;
-//
-//    public void refreshToken(HttpServletRequest request) {
-//        String refreshToken = cookieService.extractTokenFromCookies(request, "refreshToken")
-//                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
-//
-//        if (!tokenProvider.validateToken(refreshToken)) {
-//            throw new RuntimeException("Invalid refresh token");
-//        }
-//
-//        tokenProvider.checkAndRefreshTokens();
-//    }
-//
-//    public void logout(HttpServletRequest request, HttpServletResponse response) {
-//        cookieService.deleteCookie(request, response, "accessToken");
-//        cookieService.deleteCookie(request, response, "refreshToken");
-//        SecurityContextHolder.clearContext();
-//    }
-//
-//    public void restoreOAuth2Authorization(HttpServletRequest request) {
-//        oauth2Service.restoreOAuth2Authorization(request);
-//    }
-//
-//    public Map<String, Object> getOAuth2Status(HttpServletRequest request) {
-//        return oauth2Service.getOAuth2Status(request);
-//    }
-//}
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl {
-    private final OAuth2TokenRefreshService oauth2Service;
-    private final CookieServiceImpl cookieService;
-    private final UserRepository userRepository;
 
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        cookieService.deleteOAuth2Cookies(request,response);
+    private final CookieServiceImpl cookieService;
+
+
+    public void logout(HttpServletResponse response) {
+        cookieService.deleteOAuth2Cookies(response);
         SecurityContextHolder.clearContext();
     }
 

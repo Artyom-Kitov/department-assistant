@@ -144,6 +144,28 @@ public class FileStorageService {
         return entity.getFileExtension();
     }
 
+    public String getFileSubjectById(Long id){
+        FileEntity entity = fileRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
+        return entity.getSubjectText();
+    }
+    public String getFileNameById(Long id){
+        FileEntity entity = fileRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
+        return entity.getFileName();
+    }
+
+
+    public FileEntity.TemplateType getFileTemplateTypeById(Long id) {
+        FileEntity entity = fileRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(id)));
+        return entity.getTemplateType();
+    }
+
+    public String resolveFileName(Long templateId){
+        return getFileNameById(templateId) + "." + getFileExtensionById(templateId);
+    }
+
     private String resolveFullFileName(String fsFileName, String fileExtension) {
         return fsFileName + "." + fileExtension;
     }

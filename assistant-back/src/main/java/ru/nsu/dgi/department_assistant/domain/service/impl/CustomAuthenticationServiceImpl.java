@@ -1,6 +1,5 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import ru.nsu.dgi.department_assistant.domain.entity.users.CustomOAuth2User;
 import ru.nsu.dgi.department_assistant.domain.exception.TokenRefreshException;
 
 import java.util.Collection;
-import java.util.Optional;
 
 @Slf4j
 @Service

@@ -1,18 +1,16 @@
 package ru.nsu.dgi.department_assistant.domain.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Service;
-import ru.nsu.dgi.department_assistant.domain.exception.FileServiceException;
 import ru.nsu.dgi.department_assistant.domain.service.FileService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
@@ -41,8 +39,7 @@ public class FileServiceImpl implements FileService {
     }
 
     private byte[] convertHtmlToBytes(String html) {
-        // TODO: Реализовать конвертацию HTML
-        throw new UnsupportedOperationException("HTML conversion not implemented yet");
+        return html.getBytes(StandardCharsets.UTF_8);
     }
 
     private byte[] convertTxtToBytes(String text) {
@@ -52,5 +49,6 @@ public class FileServiceImpl implements FileService {
     public byte[] getTemplateFileBytes(Path filePath) throws IOException {
         return Files.readAllBytes(filePath);
     }
+
 
 }

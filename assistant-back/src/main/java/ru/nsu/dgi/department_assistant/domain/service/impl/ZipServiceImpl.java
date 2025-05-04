@@ -18,6 +18,9 @@ import java.util.zip.ZipOutputStream;
 @RequiredArgsConstructor
 public class ZipServiceImpl {
     private final TemplateHandlerDispatcherServiceImpl templateHandlerDispatcherService;
+    private final FileStorageService fileStorageService;
+
+    private final FileServiceImpl fileService;
 
     public byte[] createZipArchive(List<Long> templateIds, UUID employeeId, List<MultipartFile> uploadedFiles) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -50,8 +53,8 @@ public class ZipServiceImpl {
 
 
     public void addTemplateToZip(ZipOutputStream zos, Long templateId, UUID employeeId) throws IOException {
-        String processedContent = templateHandlerDispatcherService.processTemplate(templateId, employeeId);
-        addFileToZip(zos, templateId + ".txt", processedContent.getBytes());
+        Object processedContent = templateHandlerDispatcherService.processTemplate(templateId, employeeId);
+        addFileToZip(zos, fileStorageService.resolveFileName(templateId), fileService.convertToBytes(processedContent));
     }
 
 
