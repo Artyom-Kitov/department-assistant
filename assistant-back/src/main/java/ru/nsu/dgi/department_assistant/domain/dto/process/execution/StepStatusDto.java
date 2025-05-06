@@ -10,6 +10,7 @@ public record StepStatusDto(
         UUID employeeId,
         UUID processId,
         int stepId,
+        int type,
         UUID startProcessId,
         LocalDate deadline,
         @Nullable LocalDate completedAt,

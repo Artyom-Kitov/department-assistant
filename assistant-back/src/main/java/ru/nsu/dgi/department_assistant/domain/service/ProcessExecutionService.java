@@ -5,8 +5,11 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProc
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessExecutionStatusDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepCancellationRequestDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
+import ru.nsu.dgi.department_assistant.domain.dto.process.template.ProcessTemplateShortDto;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,4 +28,10 @@ public interface ProcessExecutionService {
     void executeConditional(ConditionalExecutedDto dto);
 
     EmployeeProcessExecutionDto getStatuses(UUID employeeId, UUID processId);
+
+    List<ProcessTemplateShortDto> getByEmployee(UUID employeeId);
+
+    void cancelStep(StepCancellationRequestDto request);
+
+    void cancelSubstep(SubstepCancellationRequestDto request);
 }
