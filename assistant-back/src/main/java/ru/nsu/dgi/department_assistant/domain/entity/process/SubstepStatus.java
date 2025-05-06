@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.nsu.dgi.department_assistant.domain.entity.documents.DocumentType;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.SubstepStatusId;
 
 import java.util.UUID;
@@ -39,6 +40,10 @@ public class SubstepStatus {
 
     @Column(name = "is_completed", nullable = false)
     private boolean isCompleted;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "document_type_id")
+    private DocumentType documentType;
 
     @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinColumn(name = "employee_id", referencedColumnName = "employee_id", insertable = false, updatable = false)

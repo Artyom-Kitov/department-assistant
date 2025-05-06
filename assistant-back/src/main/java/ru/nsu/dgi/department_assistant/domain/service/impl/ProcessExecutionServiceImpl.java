@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import ru.nsu.dgi.department_assistant.config.StepType;
+import ru.nsu.dgi.department_assistant.domain.dto.documents.DocumentTypeDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ConditionalExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.EmployeeProcessExecutionDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.ProcessCancellationDto;
@@ -15,6 +16,7 @@ import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepExecuted
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.StepStatusDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepExecutedDto;
 import ru.nsu.dgi.department_assistant.domain.dto.process.execution.SubstepStatusDto;
+import ru.nsu.dgi.department_assistant.domain.entity.documents.DocumentType;
 import ru.nsu.dgi.department_assistant.domain.entity.employee.Employee;
 import ru.nsu.dgi.department_assistant.domain.entity.process.CommonTransition;
 import ru.nsu.dgi.department_assistant.domain.entity.process.ConditionalTransition;
@@ -115,7 +117,7 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         ProcessTemplateResponseDto process = processTemplateService.getProcessById(request.processId());
         ProcessGraph graph = processGraphService.buildGraph(process.id(), process.name(), process.steps());
 
-        int current = ((CommonStepData) graph.getNode(graph.start()).getData()).getNext();
+        int current = ((StartStepData) graph.getNode(graph.start()).getData()).getNext();
         employeeAtProcessRepository.save(new EmployeeAtProcess(request.employeeId(), request.processId(), null,
                 LocalDate.now(), deadline, request.processId(), current, null));
         markAsStarted(request.employeeId(), request.processId(), request.processId(), graph.start(),
@@ -283,7 +285,13 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
                             s.getId());
                     return substepStatusRepository.findById(statusId).orElseThrow();
                 })
-                .map(s -> new SubstepStatusDto(s.getSubstepId(), s.isCompleted()))
+                .map(s -> new SubstepStatusDto(
+                    s.getSubstepId(), 
+                    s.isCompleted(), 
+                    s.getSubstep().getDocumentType() != null ? 
+                        DocumentTypeDto.fromEntity(s.getSubstep().getDocumentType()) :
+                        null
+                ))
                 .toList();
     }
 
@@ -362,8 +370,8 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         markAsStartedImpl(employee, startProcessId, processId, graph, stepId, startDate);
     }
 
-    private void markAsStartedImpl(Employee employee, UUID startProcessId, UUID processId, ProcessGraph graph,
-                                   int nodeId, @Nullable LocalDate startDate) {
+    private void markAsStartedImpl(Employee employee, UUID startProcessId, UUID processId, ProcessGraph graph, int nodeId,
+                                 @Nullable LocalDate startDate) {
         ProcessGraphNode node = graph.getNode(nodeId);
         LocalDate endDate = startDate != null ? startDate.plusDays(node.getDuration()) : null;
 
@@ -374,8 +382,16 @@ public class ProcessExecutionServiceImpl implements ProcessExecutionService {
         stepStatusRepository.save(stepStatus);
         if (node.getData() instanceof SubtasksStepData d) {
             d.getSubtasks().forEach(task -> {
-                SubstepStatus substepStatus = new SubstepStatus(employee.getId(), startProcessId, task.id(),
-                        false, null, null);
+                SubstepStatus substepStatus = new SubstepStatus();
+                substepStatus.setEmployeeId(employee.getId());
+                substepStatus.setStartProcessId(startProcessId);
+                substepStatus.setSubstepId(task.id());
+                substepStatus.setCompleted(false);
+                
+                DocumentType docType = task.documentType();
+                if (docType != null) {
+                    substepStatus.setDocumentType(docType);
+                }
                 substepStatusRepository.save(substepStatus);
             });
         }

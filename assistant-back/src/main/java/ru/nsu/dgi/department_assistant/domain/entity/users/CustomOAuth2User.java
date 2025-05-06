@@ -32,8 +32,8 @@ import java.util.Map;
 
         @Override
         public String getName() {
-            // return getEmail(); // Теперь возвращаем email вместо имени!
-            return oauth2User.getAttribute("name");
+             return getEmail(); // Теперь возвращаем email вместо имени!
+            //return oauth2User.getAttribute("name");
         }
 
         public String getEmail() {

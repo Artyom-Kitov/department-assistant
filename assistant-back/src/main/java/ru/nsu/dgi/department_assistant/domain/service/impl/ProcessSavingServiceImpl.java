@@ -15,9 +15,7 @@ import ru.nsu.dgi.department_assistant.domain.entity.process.id.StepId;
 import ru.nsu.dgi.department_assistant.domain.entity.process.id.TransitionId;
 import ru.nsu.dgi.department_assistant.domain.exception.InvalidProcessTemplateException;
 import ru.nsu.dgi.department_assistant.domain.exception.EntityNotFoundException;
-import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraph;
-import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
-import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
+import ru.nsu.dgi.department_assistant.domain.graph.*;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.ConditionalStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.FinalData;
@@ -34,6 +32,8 @@ import ru.nsu.dgi.department_assistant.domain.repository.process.StepRepository;
 import ru.nsu.dgi.department_assistant.domain.repository.process.SubstepRepository;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessGraphService;
 import ru.nsu.dgi.department_assistant.domain.service.ProcessSavingService;
+import ru.nsu.dgi.department_assistant.domain.repository.documents.DocumentTypeRepository;
+import ru.nsu.dgi.department_assistant.domain.entity.documents.DocumentType;
 
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,6 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
     private final ConditionalTransitionRepository conditionalTransitionRepository;
     private final FinalTypeRepository finalTypeRepository;
     private final ProcessTransitionRepository processTransitionRepository;
-
     private final ProcessGraphService processGraphService;
 
     @Transactional
@@ -134,9 +133,29 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
                 data.getNext());
         commonTransitionRepository.save(transition);
 
+        List<Substep> substeps = substepRepository.findAllByStep(step);
+        List<SubtaskLike> subtasks = substeps.stream()
+                .<SubtaskLike>map(substep -> {
+                    if (substep.getDocumentType() != null) {
+                        return new DocumentSubtask(
+                            new Subtask(substep.getId(), substep.getDescription(), substep.getDuration()),
+                            substep.getDocumentType()
+                        );
+                    } else {
+                        return new Subtask(substep.getId(), substep.getDescription(), substep.getDuration());
+                    }
+                })
+                .toList();
+
         data.getSubtasks().stream()
-                .map(subtask -> new Substep(subtask.id(), step, subtask.duration(), subtask.description()))
-                .forEach(substepRepository::save);
+                .forEach(subtask -> {
+                    DocumentType docType = subtask.documentType();
+                    if (docType != null) {
+                        substepRepository.save(new Substep(subtask.id(), step, subtask.duration(), subtask.description(), docType));
+                    } else {
+                        substepRepository.save(new Substep(subtask.id(), step, subtask.duration(), subtask.description(), null));
+                    }
+                });
     }
 
     @Override
@@ -182,8 +201,17 @@ public class ProcessSavingServiceImpl implements ProcessSavingService {
             }
             case SUBTASKS -> {
                 List<Substep> substeps = substepRepository.findAllByStep(step);
-                List<Subtask> subtasks = substeps.stream()
-                        .map(substep -> new Subtask(substep.getId(), substep.getDescription(), substep.getDuration()))
+                List<SubtaskLike> subtasks = substeps.stream()
+                        .<SubtaskLike>map(substep -> {
+                            if (substep.getDocumentType() != null) {
+                                return new DocumentSubtask(
+                                    new Subtask(substep.getId(), substep.getDescription(), substep.getDuration()),
+                                    substep.getDocumentType()
+                                );
+                            } else {
+                                return new Subtask(substep.getId(), substep.getDescription(), substep.getDuration());
+                            }
+                        })
                         .toList();
                 CommonTransition transition = commonTransitionRepository.findById(
                         new TransitionId(node.getId(), step.getProcessId())).orElseThrow();

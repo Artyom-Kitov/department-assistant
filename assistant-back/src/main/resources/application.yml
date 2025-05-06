@@ -33,28 +33,10 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-
-
 server:
   port: 8080
 
 file:
   storage-path: ./storage
-#jwt:
-#  secret: 559f22be7e1753450f587d11182c91a16bee04a1951ac33f3e03ec7a3c31790d9f97fcc1691fd41f1e30ba6fb88d651a4751dd55c5bbb3169ee58541a3cb2414ae163e132401f5d1e686d28b9829377aba882af5956386cf3e8c5662bb3a79fdd6595c4e0e1e2a936c1d60cd62b2e0a519b320ec3850b27d483f9b4fa07c8a45a2fc26f0c7b052e2d42b76ad5b28aef85b239550dff96eb649359a8063790299e8f60cf6493b86e288fea21e08c45739e17de930cdf939a0f02a7097e360611a2d29fefec61770e3b328eed9fbdbdd9ac32affee75d02797904a6061718e1f74d36f3804c39259c20ffff39d02c40b0bb6760bf046be94533daa1a33a9c5cdcc
-#  expiration: 3600000  # 1 час
-#  refreshExpiration: 2592000000  # 30 дней
-#  refreshCheckInterval: 300000  # 5 минут
-#  refreshThreshold: 300000  # 5 минут
-
-#oauth2:
-#  refreshCheckInterval: 300000  # 5 минут
-#  refreshThreshold: 300000  # 5 минут
-#cookie:
-#  domain: ${APP_COOKIE_DOMAIN:}
-#  secure: ${APP_COOKIE_SECURE:true}
-#  same-site: Lax
-#  http-only: true
-
 
 
