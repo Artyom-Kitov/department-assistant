@@ -71,7 +71,7 @@ public class ProcessGraphServiceImpl implements ProcessGraphService {
         if (candidates.size() != 1) {
             throw new InvalidProcessTemplateException("invalid amount of start steps");
         }
-        return candidates.getFirst();
+        return candidates.get(0);
     }
 
     private void validateNoLoops(int nodeId, Map<Integer, ProcessGraphNode> nodes,

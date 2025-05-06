@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface EmployeeAtProcessRepository extends JpaRepository<EmployeeAtProcess, EmployeeAtProcessId> {
     boolean existsByProcessId(UUID processId);
+    List<EmployeeAtProcess> findByEmployeeId(UUID employeeId);
 
     @Query("""
             SELECT eap FROM EmployeeAtProcess eap

@@ -3,7 +3,7 @@ package ru.nsu.dgi.department_assistant.domain.graph.stepdata;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
+import ru.nsu.dgi.department_assistant.domain.graph.SubtaskLike;
 
 import java.util.Comparator;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 @ToString
 public final class SubtasksStepData implements StepData {
 
-    private final List<Subtask> subtasks;
+    private final List<SubtaskLike> subtasks;
     private final int next;
 
     @Override
@@ -24,7 +24,7 @@ public final class SubtasksStepData implements StepData {
     @Override
     public int duration() {
         return subtasks.stream()
-                    .max(Comparator.comparingInt(Subtask::duration))
+                    .max(Comparator.comparingInt(SubtaskLike::duration))
                     .orElseThrow()
                     .duration();
     }

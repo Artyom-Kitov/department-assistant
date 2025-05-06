@@ -1,4 +1,18 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 539777559204-07npafenqtct9sqgvbc9f2ba1p7d7d72.apps.googleusercontent.com
+            client-secret: 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
+            scope: email, profile, https://www.googleapis.com/auth/gmail.send, https://www.googleapis.com/auth/gmail.compose
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+
+        provider:
+          google:
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+
   application:
     name: department-assistant
     version: 0.0.1-SNAPSHOT
@@ -24,3 +38,5 @@ server:
 
 file:
   storage-path: ./storage
+
+

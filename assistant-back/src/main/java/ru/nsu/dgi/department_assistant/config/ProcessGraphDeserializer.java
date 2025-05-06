@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.nsu.dgi.department_assistant.domain.graph.ProcessGraphNode;
 import ru.nsu.dgi.department_assistant.domain.graph.Subtask;
+import ru.nsu.dgi.department_assistant.domain.graph.DocumentSubtask;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.CommonStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.ConditionalStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.FinalData;
@@ -14,6 +15,9 @@ import ru.nsu.dgi.department_assistant.domain.graph.stepdata.ProcessTransitionSt
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StartStepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.StepData;
 import ru.nsu.dgi.department_assistant.domain.graph.stepdata.SubtasksStepData;
+import ru.nsu.dgi.department_assistant.domain.entity.documents.DocumentType;
+import ru.nsu.dgi.department_assistant.domain.repository.documents.DocumentTypeRepository;
+import ru.nsu.dgi.department_assistant.domain.graph.SubtaskLike;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,6 +27,11 @@ import java.util.UUID;
 public class ProcessGraphDeserializer extends JsonDeserializer<List<ProcessGraphNode>> {
 
     private static final String DURATION_STRING = "duration";
+    private final DocumentTypeRepository documentTypeRepository;
+
+    public ProcessGraphDeserializer(DocumentTypeRepository documentTypeRepository) {
+        this.documentTypeRepository = documentTypeRepository;
+    }
 
     @Override
     public List<ProcessGraphNode> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
@@ -84,14 +93,22 @@ public class ProcessGraphDeserializer extends JsonDeserializer<List<ProcessGraph
 
     private SubtasksStepData deserializeSubtasks(JsonNode node) {
         JsonNode subtasksNode = node.get("subtasks");
-        List<Subtask> subtasks = new ArrayList<>();
+        List<SubtaskLike> subtasks = new ArrayList<>();
         for (JsonNode subtaskNode : subtasksNode) {
             UUID subtaskId = UUID.randomUUID();
             String description = subtaskNode.get("description").asText();
             int duration = subtaskNode.get(DURATION_STRING) != null
                     ? subtaskNode.get(DURATION_STRING).asInt(1)
                     : 1;
-            subtasks.add(new Subtask(subtaskId, description, duration));
+            
+            if (subtaskNode.has("documentType")) {
+                Long documentTypeId = Long.parseLong(subtaskNode.get("documentType").asText());
+                DocumentType documentType = documentTypeRepository.findById(documentTypeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Document type not found: " + documentTypeId));
+                subtasks.add(new DocumentSubtask(new Subtask(subtaskId, description, duration), documentType));
+            } else {
+                subtasks.add(new Subtask(subtaskId, description, duration));
+            }
         }
         int next = node.get("next").asInt();
         return new SubtasksStepData(subtasks, next);

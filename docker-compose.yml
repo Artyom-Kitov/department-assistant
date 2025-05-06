@@ -19,11 +19,14 @@ services:
       - DEPARTMENT_DB_URI=jdbc:postgresql://nsu_department_database:5432/department-db
       - DEPARTMENT_DB_USERNAME=assistant-back
       - DEPARTMENT_DB_PASSWORD=ZnVjayB5ZWFoIQ==
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006  # ← Вот эта строка
+
     build:
       context: assistant-back/.
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+      - "5006:5006"
     depends_on:
       - nsu_department_database
     networks:

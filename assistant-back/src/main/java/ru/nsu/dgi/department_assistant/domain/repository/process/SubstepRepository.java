@@ -11,4 +11,7 @@ import java.util.UUID;
 @Repository
 public interface SubstepRepository extends JpaRepository<Substep, UUID> {
     List<Substep> findAllByStep(Step step);
+    
+//    @Query("SELECT s FROM Substep s WHERE s.step.id = :stepId")
+//    List<Substep> findByStepId(@Param("stepId") UUID stepId);
 }

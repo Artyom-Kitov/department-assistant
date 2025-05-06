@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.nsu.dgi.department_assistant.domain.entity.documents.DocumentType;
 
 import java.util.UUID;
 
@@ -36,4 +37,8 @@ public class Substep {
 
     @Column(name = "description", nullable = false)
     private String description;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "document_type_id")
+    private DocumentType documentType;
 }
